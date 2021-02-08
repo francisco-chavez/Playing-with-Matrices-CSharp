@@ -35,5 +35,16 @@ namespace MainProgram
 		{
 			throw new NotImplementedException();
 		}
+
+		public static float[] MatrixMult_MonoArray_TransposeDotProduct(float[] matrixA, float[] matrixB, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static float[] MatrixMult_MonoArray_Strassen(float[] matrixA, float[] matrixB, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
+		{
+			throw new NotImplementedException();
+		}
+
 	}
 }
