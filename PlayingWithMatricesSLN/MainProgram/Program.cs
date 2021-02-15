@@ -174,6 +174,12 @@ namespace MainProgram
 				n++;
 			}
 
+			// If the matrices are below a certain size, then using the Strassen algorithm isn't worth it.
+			if (n < 5)
+			{
+				return MatrixMult_MonoArray_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
+			}
+
 			var halfT = t / 2;
 
 			var start_11_0 = 0;
@@ -195,6 +201,7 @@ namespace MainProgram
 			var start_22_1 = halfT;
 			//var end_22_0 = t - 1;
 			//var end_22_1 = t - 1;
+
 
 			int blockSize = halfT * halfT;
 
