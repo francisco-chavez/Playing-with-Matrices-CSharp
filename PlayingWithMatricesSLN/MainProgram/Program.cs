@@ -241,28 +241,29 @@ namespace MainProgram
 			/// 
 			Add(a11, a22, tm1, blockSize);
 			Add(b11, b22, tm2, blockSize);
-			// Mult(tm1, tm2) => m1;
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, tm2, m1, halfT);
+
 
 			Add(a21, a22, tm1, blockSize);
-			// Mult(tm1, b11) => m2;
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, b11, m2, halfT);
 
 
 			Subtract(b12, b22, tm2, blockSize);
-			// Mult(a11, tm2) => m3;
+			MatrixMult_MonoArray_StrassenRecursiveComp(a11, tm2, m3, halfT);
 
 			Subtract(b21, b11, tm2, blockSize);
-			// Mult(a22, tm2) => m4
+			MatrixMult_MonoArray_StrassenRecursiveComp(a22, tm2, m4, halfT);
 
 			Add(a11, a12, tm1, blockSize);
-			// Mult(tm1, b22) => m5
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, b22, m5, halfT);
 
 			Subtract(a21, a11, tm1, blockSize);
 			Add(b11, b12, tm2, blockSize);
-			// Mult(tm1, tm2) => m6
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, tm2, m6, halfT);
 
 			Subtract(a12, a22, tm1, blockSize);
 			Add(b21, b22, tm2, blockSize);
-			// Mult(tm1, tm2) => m7
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, tm2, m7, halfT);
 
 
 			float[] c11 = new float[blockSize];
@@ -357,9 +358,12 @@ namespace MainProgram
 				}
 			}
 
-			throw new NotImplementedException();
+			return result;
+		}
 
-			//return result;
+		public static void MatrixMult_MonoArray_StrassenRecursiveComp(float[] matrixA, float[] matrixB, float[] result, int length)
+		{
+			throw new NotImplementedException();
 		}
 
 		public static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length, int sourceWidth, int sourceHeight)
