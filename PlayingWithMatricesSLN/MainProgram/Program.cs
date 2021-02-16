@@ -28,26 +28,20 @@ namespace MainProgram
 ;
 
 
-			int rWidth		= 15;
-			int rHeight		= 15;
-			int dotLength	= 500;
+			int rWidth		= 40;
+			int rHeight		= 8;
+			int dotLength	= 100;
 
 			var matrixA		= new float[rHeight * dotLength];
 			var matrixB		= new float[dotLength * rWidth];
 
 			{
-				float value = 1.0f;
+				Random r = new Random(0);
 				for (int i = 0; i < rHeight * dotLength; i++)
-				{
-					matrixA[i] = value;
-					value += 1.0f;
-				}
+					matrixA[i] = 1.5f * (float) r.NextDouble() - 0.5f;
 
 				for (int i = 0; i < dotLength * rWidth; i++)
-				{
-					matrixB[i] = value;
-					value += 1.0f;
-				}
+					matrixB[i] = (float) r.NextDouble();
 			}
 
 			var sizeA		= new Tuple<int, int>(rHeight, dotLength);
@@ -55,12 +49,12 @@ namespace MainProgram
 
 
 
-			//var conventionalResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, sizeA, sizeB);
-			var conventionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
-			//var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
-			var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixB, matrixA, sizeB, sizeA);
-			//var strassen = MatrixMult_MonoArray_Strassen(matrixA, matrixB, sizeA, sizeB);
-			var strassen = MatrixMult_MonoArray_Strassen(matrixB, matrixA, sizeB, sizeA);
+			var conventionalResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, sizeA, sizeB);
+			//var conventionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
+			var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
+			//var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixB, matrixA, sizeB, sizeA);
+			var strassenResult = MatrixMult_MonoArray_Strassen(matrixA, matrixB, sizeA, sizeB);
+			//var strassenResult = MatrixMult_MonoArray_Strassen(matrixB, matrixA, sizeB, sizeA);
 
 			var resultSize = rWidth * rHeight;
 			for (int i = 0; i < resultSize; i++)
@@ -71,7 +65,7 @@ namespace MainProgram
 
 			for (int i = 0; i < resultSize; i++)
 			{
-				if (Math.Abs(conventionalResult[i] - strassen[i]) > 0.00001)
+				if (Math.Abs(conventionalResult[i] - strassenResult[i]) > 0.00001)
 					throw new Exception();
 			}
 
@@ -271,6 +265,7 @@ namespace MainProgram
 			FillInBlock(b21, matrixB, start_21_1, start_21_0, halfT, sizeB.Item2, sizeB.Item1);
 			FillInBlock(b22, matrixB, start_22_1, start_22_0, halfT, sizeB.Item2, sizeB.Item1);
 
+
 			var m1 = new float[blockSize];
 			var m2 = new float[blockSize];
 			var m3 = new float[blockSize];
@@ -320,7 +315,7 @@ namespace MainProgram
 			///
 			/// Calculate c11, c12, c21, c22
 			/// 
-			Add(m1, m2, tm1, blockSize);
+			Add(m1, m4, tm1, blockSize);
 			Subtract(m7, m5, tm2, blockSize);
 			Add(tm1, tm2, c11, blockSize);
 
@@ -413,7 +408,7 @@ namespace MainProgram
 
 			// So, once an matrix falls below a certain size, we no longer need to worry so much about cache misses 
 			// and such. At that point, we can just use the conventional algorithm.
-			if (length < 16)
+			if (length < 17)
 			{
 				var tempResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
 				Array.Copy(tempResult, result, blockSize);
@@ -495,7 +490,7 @@ namespace MainProgram
 			///
 			/// Calculate c11, c12, c21, c22
 			/// 
-			Add(m1, m2, tm1, childBlockSize);
+			Add(m1, m4, tm1, childBlockSize);
 			Subtract(m7, m5, tm2, childBlockSize);
 			Add(tm1, tm2, c11, childBlockSize);
 
@@ -593,20 +588,19 @@ namespace MainProgram
 		/// <param name="startColumn">The column in the source matrix that we start coping data from.</param>
 		/// <param name="startRow">The row in the source matrix that we start coping data from.</param>
 		/// <param name="length">The dimensional size reference used in our matrices.</param>
-		public static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length)
+		public static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int resultLength)
 		{
-			for (int i = 0; i < length; i++)
+			for (int i = 0; i < resultLength; i++)
 			{
 				int currentRowSource = i + startRow;
-				int offsetRowResult = i * length;
-				int offsetRowSource = (2 * length) * currentRowSource;
 
-				for (int j = 0; j < length; j++)
+				int offsetSource = (i + startRow) * (resultLength * 2) + startColumn;
+				int offsetResult = i * resultLength;
+
+				for (int j = 0; j < resultLength; j++)
 				{
-					var indexR = offsetRowResult + j;
-
-					int currentColumnSource = j + startColumn;
-					var indexS = offsetRowSource + currentColumnSource;
+					var indexR = offsetResult + j;
+					var indexS = offsetSource + j;
 
 					result[indexR] = source[indexS];
 				}
