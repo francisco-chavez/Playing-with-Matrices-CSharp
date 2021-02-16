@@ -18,41 +18,85 @@ namespace MainProgram
 			// 
 			// var matrixA		= CreateRandomMonoMatrix(seed: 0, height: rHeight, width: dotLength);
 			// var matrixB		= CreateRandomMonoMatrix(seed: 1, height: dotLength, width: rWidth);
-			// 
-			// var sizeA		= new Tuple<int, int>(rHeight, dotLength);
-			// var sizeB		= new Tuple<int, int>(dotLength, rWidth);
 
-			int rWidth		= 1;
-			int rHeight		= 1;
-			int dotLength	= 3;
-			
-			var matrixA		= new float[] { 1.0f, 2.0f, 3.0f };
-			var matrixB		= new float[] { 4.0f, 5.0f, 6.0f };
-			
+			//int rWidth		= 1;
+			//int rHeight		= 1;
+			//int dotLength	= 3;
+			//
+			//var matrixA		= new float[] { 1.0f, 2.0f, 3.0f };
+			//var matrixB		= new float[] { 4.0f, 5.0f, 6.0f };
+;
+
+
+			int rWidth		= 15;
+			int rHeight		= 15;
+			int dotLength	= 500;
+
+			var matrixA		= new float[rHeight * dotLength];
+			var matrixB		= new float[dotLength * rWidth];
+
+			{
+				float value = 1.0f;
+				for (int i = 0; i < rHeight * dotLength; i++)
+				{
+					matrixA[i] = value;
+					value += 1.0f;
+				}
+
+				for (int i = 0; i < dotLength * rWidth; i++)
+				{
+					matrixB[i] = value;
+					value += 1.0f;
+				}
+			}
+
 			var sizeA		= new Tuple<int, int>(rHeight, dotLength);
 			var sizeB		= new Tuple<int, int>(dotLength, rWidth);
 
-			DateTime t0;
-			DateTime t1;
-			TimeSpan monoConventional;
-			TimeSpan monoDotT;
 
-			t0 = DateTime.Now;
-			//var contentionalResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, sizeA, sizeB);
-			var contentionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
-			t1 = DateTime.Now;
 
-			monoConventional = t1 - t0;
-
-			t0 = DateTime.Now;
+			//var conventionalResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, sizeA, sizeB);
+			var conventionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
 			//var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
 			var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixB, matrixA, sizeB, sizeA);
-			t1 = DateTime.Now;
+			//var strassen = MatrixMult_MonoArray_Strassen(matrixA, matrixB, sizeA, sizeB);
+			var strassen = MatrixMult_MonoArray_Strassen(matrixB, matrixA, sizeB, sizeA);
 
-			monoDotT = t1 - t0;
+			var resultSize = rWidth * rHeight;
+			for (int i = 0; i < resultSize; i++)
+			{
+				if (Math.Abs(conventionalResult[i] - dotTResult[i]) > 0.00001)
+					throw new Exception();
+			}
 
-			Console.WriteLine("[A] * [B] Conventional: {0}s", monoConventional.TotalSeconds);
-			Console.WriteLine("[A] * [B] Dot Product: {0}s", monoDotT.TotalSeconds);
+			for (int i = 0; i < resultSize; i++)
+			{
+				if (Math.Abs(conventionalResult[i] - strassen[i]) > 0.00001)
+					throw new Exception();
+			}
+
+
+			//DateTime t0;
+			//DateTime t1;
+			//TimeSpan monoConventional;
+			//TimeSpan monoDotT;
+			//
+			//t0 = DateTime.Now;
+			////var conventionalResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, sizeA, sizeB);
+			//var conventionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
+			//t1 = DateTime.Now;
+			//
+			//monoConventional = t1 - t0;
+			//
+			//t0 = DateTime.Now;
+			////var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
+			//var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixB, matrixA, sizeB, sizeA);
+			//t1 = DateTime.Now;
+			//
+			//monoDotT = t1 - t0;
+			//
+			//Console.WriteLine("[A] * [B] Conventional: {0}s", monoConventional.TotalSeconds);
+			//Console.WriteLine("[A] * [B] Dot Product: {0}s", monoDotT.TotalSeconds);
 
 			Console.WriteLine();
 			Console.Write("Press any key to Exit.");
@@ -174,10 +218,12 @@ namespace MainProgram
 				n++;
 			}
 
-			// If the matrices are below a certain size, then using the Strassen algorithm isn't worth it.
+			// If the matrices are below a certain size, then using the Strassen algorithm isn't worth it. Also, 
+			// the dot transpose method is there for avoid cache misses, but if the matrix is small enough, then 
+			// that's not really a worry either.
 			if (n < 5)
 			{
-				return MatrixMult_MonoArray_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
+				return MatrixMult_MonoArray_Conventional(matrixA, matrixB, sizeA, sizeB);
 			}
 
 			var halfT = t / 2;
@@ -326,7 +372,7 @@ namespace MainProgram
 
 			for (int i = 0; i < halfT; i++)
 			{
-				if (i + halfT > resultRowCount)
+				if (i + halfT >= resultRowCount)
 					break;
 
 				int offsetR = (i + halfT) * resultColumnCount;
@@ -363,7 +409,151 @@ namespace MainProgram
 
 		public static void MatrixMult_MonoArray_StrassenRecursiveComp(float[] matrixA, float[] matrixB, float[] result, int length)
 		{
-			throw new NotImplementedException();
+			var blockSize = length * length;
+
+			// So, once an matrix falls below a certain size, we no longer need to worry so much about cache misses 
+			// and such. At that point, we can just use the conventional algorithm.
+			if (length < 16)
+			{
+				var tempResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
+				Array.Copy(tempResult, result, blockSize);
+				return;
+			}
+
+			var childLength		= length / 2;
+			var childBlockSize	= childLength * childLength;
+
+			var a11 = new float[childBlockSize];
+			var a12 = new float[childBlockSize];
+			var a21 = new float[childBlockSize];
+			var a22 = new float[childBlockSize];
+
+			var b11 = new float[childBlockSize];
+			var b12 = new float[childBlockSize];
+			var b21 = new float[childBlockSize];
+			var b22 = new float[childBlockSize];
+
+			//			dest,	source,		start column	start row,		length along row/column
+			FillInBlock(a11,	matrixA,	0,				0,				childLength);
+			FillInBlock(a12,	matrixA,	childLength,	0,				childLength);
+			FillInBlock(a21,	matrixA,	0,				childLength,	childLength);
+			FillInBlock(a22,	matrixA,	childLength,	childLength,	childLength);
+											 
+			FillInBlock(b11,	matrixB,	0,				0,				childLength);
+			FillInBlock(b12,	matrixB,	childLength,	0,				childLength);
+			FillInBlock(b21,	matrixB,	0,				childLength,	childLength);
+			FillInBlock(b22,	matrixB,	childLength,	childLength,	childLength);
+
+
+			var m1 = new float[childBlockSize];
+			var m2 = new float[childBlockSize];
+			var m3 = new float[childBlockSize];
+			var m4 = new float[childBlockSize];
+			var m5 = new float[childBlockSize];
+			var m6 = new float[childBlockSize];
+			var m7 = new float[childBlockSize];
+
+			var tm1 = new float[childBlockSize];
+			var tm2 = new float[childBlockSize];
+
+
+			///
+			/// Calculte m1 to m7
+			/// 
+			Add(a11, a22, tm1, childBlockSize);
+			Add(b11, b22, tm2, childBlockSize);
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, tm2, m1, childLength);
+
+
+			Add(a21, a22, tm1, childBlockSize);
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, b11, m2, childLength);
+
+
+			Subtract(b12, b22, tm2, childBlockSize);
+			MatrixMult_MonoArray_StrassenRecursiveComp(a11, tm2, m3, childLength);
+
+			Subtract(b21, b11, tm2, childBlockSize);
+			MatrixMult_MonoArray_StrassenRecursiveComp(a22, tm2, m4, childLength);
+
+			Add(a11, a12, tm1, childBlockSize);
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, b22, m5, childLength);
+
+			Subtract(a21, a11, tm1, childBlockSize);
+			Add(b11, b12, tm2, childBlockSize);
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, tm2, m6, childLength);
+
+			Subtract(a12, a22, tm1, childBlockSize);
+			Add(b21, b22, tm2, childBlockSize);
+			MatrixMult_MonoArray_StrassenRecursiveComp(tm1, tm2, m7, childLength);
+
+
+			float[] c11 = new float[childBlockSize];
+			float[] c12 = new float[childBlockSize];
+			float[] c21 = new float[childBlockSize];
+			float[] c22 = new float[childBlockSize];
+
+			///
+			/// Calculate c11, c12, c21, c22
+			/// 
+			Add(m1, m2, tm1, childBlockSize);
+			Subtract(m7, m5, tm2, childBlockSize);
+			Add(tm1, tm2, c11, childBlockSize);
+
+			Add(m3, m5, c12, childBlockSize);
+
+			Add(m2, m4, c21, childBlockSize);
+
+			Subtract(m1, m2, tm1, childBlockSize);
+			Add(m3, m6, tm2, childBlockSize);
+			Add(tm1, tm2, c22, childBlockSize);
+
+			///
+			/// Transfer { c11, c12, c21, c22 } to result
+			/// 
+			for (int i = 0; i < childLength; i++)
+			{
+				int offsetR = i * length;
+				int offsetC = i * childLength;
+				for (int j = 0; j < childLength; j++)
+				{
+					result[offsetR + j] = c11[offsetC + j];
+				}
+			}
+
+			for (int i = 0; i < childLength; i++)
+			{
+				int offsetR = (i * length) + childLength;
+				int offsetC = i * childLength;
+
+				for (int j = 0; j < childLength; j++)
+				{
+					result[offsetR + j] = c12[offsetC + j];
+				}
+			}
+
+			for (int i = 0; i < childLength; i++)
+			{
+
+				int offsetR = (i + childLength) * length;
+				int offsetC = i * childLength;
+
+				for (int j = 0; j < childLength; j++)
+				{
+
+					result[offsetR + j] = c21[offsetC + j];
+				}
+			}
+
+			for (int i = 0; i < childLength; i++)
+			{
+				int offsetR = ((i + childLength) * length) + childLength;
+				int offsetC = i * childLength;
+
+				for (int j = 0; j < childLength; j++)
+				{
+					result[offsetR + j] = c22[offsetC + j];
+				}
+			}
 		}
 
 		public static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length, int sourceWidth, int sourceHeight)
@@ -409,7 +599,7 @@ namespace MainProgram
 			{
 				int currentRowSource = i + startRow;
 				int offsetRowResult = i * length;
-				int offsetRowSource = (2 * length) * (currentRowSource + i);
+				int offsetRowSource = (2 * length) * currentRowSource;
 
 				for (int j = 0; j < length; j++)
 				{
