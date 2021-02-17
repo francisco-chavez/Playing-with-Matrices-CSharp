@@ -31,17 +31,17 @@ namespace MainProgram
 			int rHeight		= 8;
 			int dotLength	= 100;
 
-			var matrixA = MonoMatrixOperations.CreateRandomMonoMatrix(0, 
-																	  height: rHeight, 
-																	  width: dotLength, 
-																	  minValue: -1.0f, 
-																	  maxValue: +1.0f);
+			var matrixA = MonoMatrixOperations.CreateRandomMatrix(0, 
+																  height: rHeight, 
+																  width: dotLength, 
+																  minValue: -1.0f, 
+																  maxValue: +1.0f);
 
-			var matrixB	= MonoMatrixOperations.CreateRandomMonoMatrix(5, 
-																	  height: dotLength, 
-																	  width: rWidth, 
-																	  minValue: -1.0f, 
-																	  maxValue: +1.0f);
+			var matrixB	= MonoMatrixOperations.CreateRandomMatrix(5, 
+																  height: dotLength, 
+																  width: rWidth, 
+																  minValue: -1.0f, 
+																  maxValue: +1.0f);
 
 			var sizeA		= new Tuple<int, int>(rHeight, dotLength);
 			var sizeB		= new Tuple<int, int>(dotLength, rWidth);
