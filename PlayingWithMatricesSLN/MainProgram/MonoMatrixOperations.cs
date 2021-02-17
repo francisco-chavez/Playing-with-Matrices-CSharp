@@ -124,7 +124,8 @@ namespace MainProgram
 			var resultColumnCount	= sizeB.Item2;
 			var sharedDimension		= sizeA.Item2;
 
-			var maxD = sizeA.Item1 > sizeA.Item2 ? sizeA.Item2 : sizeA.Item1;
+			var maxD = sizeA.Item1;
+			maxD = maxD < sizeA.Item2 ? sizeA.Item2 : maxD;
 			maxD = maxD < sizeB.Item2 ? sizeB.Item2 : maxD;
 
 			int n = 0;
@@ -139,7 +140,7 @@ namespace MainProgram
 			// If the matrices are below a certain size, then using the Strassen algorithm isn't worth it. Also, 
 			// the dot transpose method is there for avoid cache misses, but if the matrix is small enough, then 
 			// that's not really a worry either.
-			if (n < 3)
+			if (t < 4)
 			{
 				return MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
 			}
@@ -148,35 +149,37 @@ namespace MainProgram
 			var childBlockSize	= childLength * childLength;
 
 
-			var a11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var a12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var a21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var a22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a11		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a12		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a21		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a22		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
 
-			var b11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var b12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var b21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var b22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b11		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b12		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b21		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b22		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
 
-			var m1	= new float[childBlockSize];
-			var m2	= new float[childBlockSize];
-			var m3	= new float[childBlockSize];
-			var m4	= new float[childBlockSize];
-			var m5	= new float[childBlockSize];
-			var m6	= new float[childBlockSize];
-			var m7	= new float[childBlockSize];
+			var m1		= new float[childBlockSize];
+			var m2		= new float[childBlockSize];
+			var m3		= new float[childBlockSize];
+			var m4		= new float[childBlockSize];
+			var m5		= new float[childBlockSize];
+			var m6		= new float[childBlockSize];
+			var m7		= new float[childBlockSize];
 
-			var tm1 = new float[childBlockSize];
-			var tm2 = new float[childBlockSize];
+			var tm1		= new float[childBlockSize];
+			var tm2		= new float[childBlockSize];
 
-			var c11 = new float[childBlockSize];
-			var c12 = new float[childBlockSize];
-			var c21 = new float[childBlockSize];
-			var c22 = new float[childBlockSize];
+			var c11		= new float[childBlockSize];
+			var c12		= new float[childBlockSize];
+			var c21		= new float[childBlockSize];
+			var c22		= new float[childBlockSize];
+
+			var result	= new float[resultRowCount * resultColumnCount];
 
 
 			///
-			/// Break matrix matrices { A, B } into matrices { A11, A12, A21, A22, B11, B12, B21, B22 }
+			/// Break matrices { A, B } into matrices { A11, A12, A21, A22, B11, B12, B21, B22 }
 			///
 			FillInBlock(result: a11, source: matrixA, startRow: 0,				startColumn: 0,				length: childLength, sourceHeight: sizeA.Item1, sourceWidth: sizeA.Item2);
 			FillInBlock(result: a12, source: matrixA, startRow: 0,				startColumn: childLength,	length: childLength, sourceHeight: sizeA.Item1, sourceWidth: sizeA.Item2);
@@ -192,49 +195,46 @@ namespace MainProgram
 			///
 			/// Calculte m1 to m7
 			/// 
-			Add(a11, a22, tm1, childBlockSize);
-			Add(b11, b22, tm2, childBlockSize);
+			tm1.Add(a11, a22, childBlockSize);
+			tm2.Add(b11, b22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, tm2, m1, childLength);
 
-
-			Add(a21, a22, tm1, childBlockSize);
+			tm1.Add(a21, a22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, b11, m2, childLength);
 
-
-			Subtract(b12, b22, tm2, childBlockSize);
+			tm2.Subtract(b12, b22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(a11, tm2, m3, childLength);
 
-			Subtract(b21, b11, tm2, childBlockSize);
+			tm2.Subtract(b21, b11, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(a22, tm2, m4, childLength);
 
-			Add(a11, a12, tm1, childBlockSize);
+			tm1.Add(a11, a12, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, b22, m5, childLength);
 
-			Subtract(a21, a11, tm1, childBlockSize);
-			Add(b11, b12, tm2, childBlockSize);
+			tm1.Subtract(a21, a11, childBlockSize);
+			tm2.Add(b11, b12, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, tm2, m6, childLength);
 
-			Subtract(a12, a22, tm1, childBlockSize);
-			Add(b21, b22, tm2, childBlockSize);
+			tm1.Subtract(a12, a22, childBlockSize);
+			tm2.Add(b21, b22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, tm2, m7, childLength);
 
 
 			///
 			/// Calculate c11, c12, c21, c22
 			/// 
-			Add(m1, m4, tm1, childBlockSize);
-			Subtract(m7, m5, tm2, childBlockSize);
-			Add(tm1, tm2, c11, childBlockSize);
+			tm1.Add(m1, m4, childBlockSize);
+			tm2.Subtract(m7, m5, childBlockSize);
+			c11.Add(tm1, tm2, childBlockSize);
 
-			Add(m3, m5, c12, childBlockSize);
+			c12.Add(m3, m5, childBlockSize);
 
-			Add(m2, m4, c21, childBlockSize);
+			c21.Add(m2, m4, childBlockSize);
 
-			Subtract(m1, m2, tm1, childBlockSize);
-			Add(m3, m6, tm2, childBlockSize);
-			Add(tm1, tm2, c22, childBlockSize);
+			tm1.Subtract(m1, m2, childBlockSize);
+			tm2.Add(m3, m6, childBlockSize);
+			c22.Add(tm1, tm2, childBlockSize);
 
-			float[] result = new float[resultRowCount * resultColumnCount];
 
 			///
 			/// Transfer { c11, c12, c21, c22 } to result
@@ -256,64 +256,54 @@ namespace MainProgram
 				}
 			}
 
-			//for (int i = 0; i < halfT; i++)
-			//{
-			//	if (i >= resultRowCount)
-			//		break;
-			//
-			//	int offsetR = (i * resultColumnCount) + halfT;
-			//	int offsetC = i * halfT;
-			//
-			//	for (int j = 0; j < halfT; j++)
-			//	{
-			//		if (j + halfT >= resultColumnCount)
-			//			break;
-			//
-			//		result[offsetR + j] = c12[offsetC + j];
-			//	}
-			//}
-			//
-			//for (int i = 0; i < halfT; i++)
-			//{
-			//	if (i + halfT >= resultRowCount)
-			//		break;
-			//
-			//	int offsetR = (i + halfT) * resultColumnCount;
-			//	int offsetC = i * halfT;
-			//
-			//	for (int j = 0; j < halfT; j++)
-			//	{
-			//		if (j >= resultColumnCount)
-			//			break;
-			//
-			//		result[offsetR + j] = c21[offsetC + j];
-			//	}
-			//}
-			//
-			//for (int i = 0; i < halfT; i++)
-			//{
-			//	if (i + halfT >= resultRowCount)
-			//		break;
-			//
-			//	int offsetR = ((i + halfT) * resultColumnCount) + halfT;
-			//	int offsetC = i * halfT;
-			//
-			//	for (int j = 0; j < halfT; j++)
-			//	{
-			//		if (j + halfT >= resultColumnCount)
-			//			break;
-			//
-			//		result[offsetR + j] = c22[offsetC + j];
-			//	}
-			//}
-
+			for (int i = 0; i < childLength; i++)
 			{
-				var valueCheck = MonoMatrixOperations.MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
-
-				for (int i = 0; i < resultColumnCount * resultRowCount; i++)
+				if (i >= resultRowCount)
+					break;
+			
+				int offsetR = (i * resultColumnCount) + childLength;
+				int offsetC = i * childLength;
+			
+				for (int j = 0; j < childLength; j++)
 				{
-					if (Math.Abs(result[i] - valueCheck[i]) > 0.001)
-						throw new Exception();
+					if (j + childLength >= resultColumnCount)
+						break;
+			
+					result[offsetR + j] = c12[offsetC + j];
+				}
+			}
+			
+			for (int i = 0; i < childLength; i++)
+			{
+				if (i + childLength >= resultRowCount)
+					break;
+			
+				int offsetR = (i + childLength) * resultColumnCount;
+				int offsetC = i * childLength;
+			
+				for (int j = 0; j < childLength; j++)
+				{
+					if (j >= resultColumnCount)
+						break;
+			
+					result[offsetR + j] = c21[offsetC + j];
+				}
+			}
+			
+			for (int i = 0; i < childLength; i++)
+			{
+				if (i + childLength >= resultRowCount)
+					break;
+			
+				int offsetR = ((i + childLength) * resultColumnCount) + childLength;
+				int offsetC = i * childLength;
+			
+				for (int j = 0; j < childLength; j++)
+				{
+					if (j + childLength >= resultColumnCount)
+						break;
+			
+					result[offsetR + j] = c22[offsetC + j];
 				}
 			}
 
@@ -334,8 +324,8 @@ namespace MainProgram
 				return;
 			}
 
-			var childLength = length / 2;
-			var childBlockSize = childLength * childLength;
+			var childLength		= length / 2;
+			var childBlockSize	= childLength * childLength;
 
 			var a11 = new float[childBlockSize];
 			var a12 = new float[childBlockSize];
@@ -347,79 +337,81 @@ namespace MainProgram
 			var b21 = new float[childBlockSize];
 			var b22 = new float[childBlockSize];
 
-			//			dest,	source,		start column	start row,		length along row/column
-			FillInBlock(a11, matrixA, 0, 0, childLength);
-			FillInBlock(a12, matrixA, childLength, 0, childLength);
-			FillInBlock(a21, matrixA, 0, childLength, childLength);
-			FillInBlock(a22, matrixA, childLength, childLength, childLength);
-
-			FillInBlock(b11, matrixB, 0, 0, childLength);
-			FillInBlock(b12, matrixB, childLength, 0, childLength);
-			FillInBlock(b21, matrixB, 0, childLength, childLength);
-			FillInBlock(b22, matrixB, childLength, childLength, childLength);
-
-
-			var m1 = new float[childBlockSize];
-			var m2 = new float[childBlockSize];
-			var m3 = new float[childBlockSize];
-			var m4 = new float[childBlockSize];
-			var m5 = new float[childBlockSize];
-			var m6 = new float[childBlockSize];
-			var m7 = new float[childBlockSize];
+			var m1	= new float[childBlockSize];
+			var m2	= new float[childBlockSize];
+			var m3	= new float[childBlockSize];
+			var m4	= new float[childBlockSize];
+			var m5	= new float[childBlockSize];
+			var m6	= new float[childBlockSize];
+			var m7	= new float[childBlockSize];
 
 			var tm1 = new float[childBlockSize];
 			var tm2 = new float[childBlockSize];
+
+			var c11 = new float[childBlockSize];
+			var c12 = new float[childBlockSize];
+			var c21 = new float[childBlockSize];
+			var c22 = new float[childBlockSize];
+
+
+			///
+			/// Brake down { A, B } into { A11, A12, A21, A22, B11, B12, B21, B22 }
+			/// 
+			//			dest,	source,		start column	start row,		length along row/column
+			FillInBlock(a11,	matrixA,	0,				0,				childLength);
+			FillInBlock(a12,	matrixA,	childLength,	0,				childLength);
+			FillInBlock(a21,	matrixA,	0,				childLength,	childLength);
+			FillInBlock(a22,	matrixA,	childLength,	childLength,	childLength);
+
+			FillInBlock(b11,	matrixB,	0,				0,				childLength);
+			FillInBlock(b12,	matrixB,	childLength,	0,				childLength);
+			FillInBlock(b21,	matrixB,	0,				childLength,	childLength);
+			FillInBlock(b22,	matrixB,	childLength,	childLength,	childLength);
 
 
 			///
 			/// Calculte m1 to m7
 			/// 
-			Add(a11, a22, tm1, childBlockSize);
-			Add(b11, b22, tm2, childBlockSize);
+			tm1.Add(a11, a22, childBlockSize);
+			tm2.Add(b11, b22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, tm2, m1, childLength);
 
-
-			Add(a21, a22, tm1, childBlockSize);
+			tm1.Add(a21, a22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, b11, m2, childLength);
 
-
-			Subtract(b12, b22, tm2, childBlockSize);
+			tm2.Subtract(b12, b22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(a11, tm2, m3, childLength);
 
-			Subtract(b21, b11, tm2, childBlockSize);
+			tm2.Subtract(b21, b11, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(a22, tm2, m4, childLength);
 
-			Add(a11, a12, tm1, childBlockSize);
+			tm1.Add(a11, a12, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, b22, m5, childLength);
 
-			Subtract(a21, a11, tm1, childBlockSize);
-			Add(b11, b12, tm2, childBlockSize);
+			tm1.Subtract(a21, a11, childBlockSize);
+			tm2.Add(b11, b12, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, tm2, m6, childLength);
 
-			Subtract(a12, a22, tm1, childBlockSize);
-			Add(b21, b22, tm2, childBlockSize);
+			tm1.Subtract(a12, a22, childBlockSize);
+			tm2.Add(b21, b22, childBlockSize);
 			MatrixMult_StrassenRecursiveComp(tm1, tm2, m7, childLength);
 
-
-			float[] c11 = new float[childBlockSize];
-			float[] c12 = new float[childBlockSize];
-			float[] c21 = new float[childBlockSize];
-			float[] c22 = new float[childBlockSize];
 
 			///
 			/// Calculate c11, c12, c21, c22
 			/// 
-			Add(m1, m4, tm1, childBlockSize);
-			Subtract(m7, m5, tm2, childBlockSize);
-			Add(tm1, tm2, c11, childBlockSize);
+			tm1.Add(m1, m4, childBlockSize);
+			tm2.Subtract(m7, m5, childBlockSize);
+			c11.Add(tm1, tm2, childBlockSize);
 
-			Add(m3, m5, c12, childBlockSize);
+			c12.Add(m3, m5, childBlockSize);
 
-			Add(m2, m4, c21, childBlockSize);
+			c21.Add(m2, m4, childBlockSize);
 
-			Subtract(m1, m2, tm1, childBlockSize);
-			Add(m3, m6, tm2, childBlockSize);
-			Add(tm1, tm2, c22, childBlockSize);
+			tm1.Subtract(m1, m2, childBlockSize);
+			tm2.Add(m3, m6, childBlockSize);
+			c22.Add(tm1, tm2, childBlockSize);
+
 
 			///
 			/// Transfer { c11, c12, c21, c22 } to result
@@ -469,17 +461,6 @@ namespace MainProgram
 				}
 			}
 
-			{
-				var valueCheck = MonoMatrixOperations.MatrixMult_Conventional(matrixA, matrixB, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
-
-				for (int i = 0; i < length * length; i++)
-				{
-					if (Math.Abs(result[i] - valueCheck[i]) > 0.001)
-						throw new Exception();
-				}
-			}
-
-
 		}
 
 		private static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length, int sourceWidth, int sourceHeight)
@@ -510,7 +491,7 @@ namespace MainProgram
 		/// <param name="startColumn">The column in the source matrix that we start coping data from.</param>
 		/// <param name="startRow">The row in the source matrix that we start coping data from.</param>
 		/// <param name="length">The dimensional size reference used in our matrices.</param>
-		public static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int resultLength)
+		private static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int resultLength)
 		{
 			for (int i = 0; i < resultLength; i++)
 			{
@@ -529,19 +510,18 @@ namespace MainProgram
 			}
 		}
 
-		public static void Add(float[] left, float[] right, float[] result, int length)
+
+		public static void Add(this float[] result, float[] left, float[] right, int blockSize)
 		{
-			for (int i = 0; i < length; i++)
+			for (int i = 0; i < blockSize; i++)
 				result[i] = left[i] + right[i];
 		}
 
-		public static void Subtract(float[] left, float[] right, float[] result, int length)
+		public static void Subtract(this float[] result, float[] left, float[] right, int blockSize)
 		{
-			for (int i = 0; i < length; i++)
+			for (int i = 0; i < blockSize; i++)
 				result[i] = left[i] - right[i];
 		}
-
-
 
 	}
 

@@ -28,8 +28,8 @@ namespace MainProgram
 
 
 			int rWidth		= 40;
-			int rHeight		= 8;
-			int dotLength	= 100;
+			int rHeight		= 1155;
+			int dotLength	= 800;
 
 			var matrixA = MonoMatrixOperations.CreateRandomMatrix(0, 
 																  height: rHeight, 
@@ -41,7 +41,7 @@ namespace MainProgram
 																  height: dotLength, 
 																  width: rWidth, 
 																  minValue: -1.0f, 
-																  maxValue: +1.0f);
+																  maxValue: +2.0f);
 
 			var sizeA		= new Tuple<int, int>(rHeight, dotLength);
 			var sizeB		= new Tuple<int, int>(dotLength, rWidth);
@@ -63,7 +63,7 @@ namespace MainProgram
 
 			for (int i = 0; i < resultSize; i++)
 			{
-				if (Math.Abs(conventionalResult[i] - strassenResult[i]) > 0.00001)
+				if (Math.Abs(conventionalResult[i] - strassenResult[i]) > 0.0001)
 					throw new Exception();
 			}
 
