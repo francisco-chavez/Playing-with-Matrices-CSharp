@@ -47,6 +47,8 @@ namespace MainProgram
 			var sizeB		= new Tuple<int, int>(dotLength, rWidth);
 
 
+			var valueCheck = DoubleCheck.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
+
 			var conventionalResult	= MonoMatrixOperations.MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
 			//var conventionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
 			var dotTResult			= MonoMatrixOperations.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
@@ -55,17 +57,26 @@ namespace MainProgram
 			//var strassenResult	= MatrixMult_MonoArray_Strassen(matrixB, matrixA, sizeB, sizeA);
 
 			var resultSize = rWidth * rHeight;
-			for (int i = 0; i < resultSize; i++)
-			{
-				if (Math.Abs(conventionalResult[i] - dotTResult[i]) > 0.00001)
-					throw new Exception();
-			}
+
+			double conventionalError = 0.0;
+			double dotTError		= 0.0;
+			double strassenError	= 0.0;
 
 			for (int i = 0; i < resultSize; i++)
 			{
-				if (Math.Abs(conventionalResult[i] - strassenResult[i]) > 0.0001)
-					throw new Exception();
+				conventionalError += Math.Abs(valueCheck[i] - conventionalResult[i]);
+				dotTError += Math.Abs(valueCheck[i] - dotTResult[i]);
+				strassenError += Math.Abs(valueCheck[i] - strassenResult[i]);
+
+				var error_c_i = conventionalResult[i] - valueCheck[i];
+				var error_s_i = strassenResult[i] - valueCheck[i];
+
+				var breakPointB = 0;
+				breakPointB++;
 			}
+
+			int breakPoint = 0;
+			breakPoint++;
 
 
 			//DateTime t0;

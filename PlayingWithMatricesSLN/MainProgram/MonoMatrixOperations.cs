@@ -44,12 +44,22 @@ namespace MainProgram
 			if (sizeA.Item2 != sizeB.Item1)
 				throw new Exception();
 
-			var resultRowCount = sizeA.Item1;
-			var resultColumnCount = sizeB.Item2;
-			var sharedDimension = sizeA.Item2;
+			var resultRowCount		= sizeA.Item1;
+			var resultColumnCount	= sizeB.Item2;
+			var sharedDimension		= sizeA.Item2;
 
-			var resultSize = resultRowCount * resultColumnCount;
-			var result = new float[resultSize];
+			var resultSize	= resultRowCount * resultColumnCount;
+			var result		= new float[resultSize];
+
+			MatrixMult_Conventional(matrixA, matrixB, result, sizeA, sizeB);
+			return result;
+		}
+
+		private static void MatrixMult_Conventional(float[] matrixA, float[] matrixB, float[] result, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
+		{
+			var resultRowCount		= sizeA.Item1;
+			var resultColumnCount	= sizeB.Item2;
+			var sharedDimension		= sizeA.Item2;
 
 			int rI = 0;
 			int aRowOffset = 0;
@@ -69,8 +79,6 @@ namespace MainProgram
 				}
 				aRowOffset += sizeA.Item2;
 			}
-
-			return result;
 		}
 
 		public static float[] MatrixMult_TransposeDotProduct(float[] matrixA, float[] matrixB, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
@@ -84,9 +92,14 @@ namespace MainProgram
 
 
 			var matrixB_T = new float[sizeB.Item1 * sizeB.Item2];
+			var copyRowOffset = 0;
 			for (int i = 0; i < sizeB.Item1; i++)
+			{
+				//var sourceOffset = i * sizeB.Item2;
 				for (int j = 0; j < sizeB.Item2; j++)
-					matrixB_T[j * sizeB.Item1 + i] = matrixB[i * sizeB.Item2 + j];
+					matrixB_T[j * sizeB.Item1 + i] = matrixB[copyRowOffset + j];
+				copyRowOffset += sizeB.Item2;
+			}
 
 			var resultSize = resultRowCount * resultColumnCount;
 			var result = new float[resultSize];
@@ -313,16 +326,14 @@ namespace MainProgram
 
 		private static void MatrixMult_StrassenRecursiveComp(float[] matrixA, float[] matrixB, float[] result, int length)
 		{
-			var blockSize = length * length;
-
-			// So, once an matrix falls below a certain size, we no longer need to worry so much about cache misses 
+			// So, once a matrix falls below a certain size, we no longer need to worry so much about cache misses 
 			// and such. At that point, we can just use the conventional algorithm.
-			if (length < 3)
+			if (length < 17)
 			{
-				var tempResult = MatrixMult_Conventional(matrixA, matrixB, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
-				Array.Copy(tempResult, result, blockSize);
+				MatrixMult_Conventional(matrixA, matrixB, result, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
 				return;
 			}
+
 
 			var childLength		= length / 2;
 			var childBlockSize	= childLength * childLength;
