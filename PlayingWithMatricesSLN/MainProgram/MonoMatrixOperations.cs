@@ -153,7 +153,7 @@ namespace MainProgram
 			// If the matrices are below a certain size, then using the Strassen algorithm isn't worth it. Also, 
 			// the dot transpose method is there for avoid cache misses, but if the matrix is small enough, then 
 			// that's not really a worry either.
-			if (t < 3)
+			if (t < 33)
 			{
 				return MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
 			}

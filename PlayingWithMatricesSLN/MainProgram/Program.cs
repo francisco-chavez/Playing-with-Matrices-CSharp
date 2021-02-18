@@ -12,12 +12,6 @@ namespace MainProgram
 	{
 		static void Main(string[] args)
 		{
-			// int rWidth		= 1500;
-			// int rHeight		= 1500;
-			// int dotLength	= 1500;
-			// 
-			// var matrixA		= CreateRandomMonoMatrix(seed: 0, height: rHeight, width: dotLength);
-			// var matrixB		= CreateRandomMonoMatrix(seed: 1, height: dotLength, width: rWidth);
 
 			//int rWidth		= 1;
 			//int rHeight		= 1;
