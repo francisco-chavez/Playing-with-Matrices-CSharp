@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DoubleCheck.cs" />
+    <Compile Include="MemoryPool.cs" />
     <Compile Include="MonoMatrixOperations.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

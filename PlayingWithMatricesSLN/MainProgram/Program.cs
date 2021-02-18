@@ -27,9 +27,9 @@ namespace MainProgram
 			//var matrixB		= new float[] { 4.0f, 5.0f, 6.0f };
 
 
-			int rWidth		= 40;
-			int rHeight		= 1155;
-			int dotLength	= 800;
+			int rWidth		= 5000;
+			int rHeight		= 11550;
+			int dotLength	= 8000;
 
 			var matrixA = MonoMatrixOperations.CreateRandomMatrix(0, 
 																  height: rHeight, 
@@ -47,66 +47,62 @@ namespace MainProgram
 			var sizeB		= new Tuple<int, int>(dotLength, rWidth);
 
 
-			var valueCheck = DoubleCheck.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
 
+			DateTime t0;
+			DateTime t1;
+			TimeSpan monoConventionalTime;
+			TimeSpan monoDotTTime;
+			TimeSpan monoStrassenTime;
+
+
+			//var valueCheck = DoubleCheck.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
+
+			t0 = DateTime.Now;
 			var conventionalResult	= MonoMatrixOperations.MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
-			//var conventionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
+			t1 = DateTime.Now;
+			monoConventionalTime = t1 - t0;
+
+			t0 = DateTime.Now;
 			var dotTResult			= MonoMatrixOperations.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
-			//var dotTResult		= MatrixMult_MonoArray_TransposeDotProduct(matrixB, matrixA, sizeB, sizeA);
+			t1 = DateTime.Now;
+			monoDotTTime = t1 - t0;
+
+			t0 = DateTime.Now;
 			var strassenResult		= MonoMatrixOperations.MatrixMult_Strassen(matrixA, matrixB, sizeA, sizeB);
-			//var strassenResult	= MatrixMult_MonoArray_Strassen(matrixB, matrixA, sizeB, sizeA);
+			t1 = DateTime.Now;
+			monoStrassenTime = t1 - t0;
 
-			var resultSize = rWidth * rHeight;
-
-			double conventionalError = 0.0;
-			double dotTError		= 0.0;
-			double strassenError	= 0.0;
-
-			for (int i = 0; i < resultSize; i++)
-			{
-				conventionalError += Math.Abs(valueCheck[i] - conventionalResult[i]);
-				dotTError += Math.Abs(valueCheck[i] - dotTResult[i]);
-				strassenError += Math.Abs(valueCheck[i] - strassenResult[i]);
-
-				var error_c_i = conventionalResult[i] - valueCheck[i];
-				var error_s_i = strassenResult[i] - valueCheck[i];
-
-				var breakPointB = 0;
-				breakPointB++;
-			}
-
-			int breakPoint = 0;
-			breakPoint++;
-
-
-			//DateTime t0;
-			//DateTime t1;
-			//TimeSpan monoConventional;
-			//TimeSpan monoDotT;
+			//var resultSize = rWidth * rHeight;
 			//
-			//t0 = DateTime.Now;
-			////var conventionalResult = MatrixMult_MonoArray_Conventional(matrixA, matrixB, sizeA, sizeB);
-			//var conventionalResult = MatrixMult_MonoArray_Conventional(matrixB, matrixA, sizeB, sizeA);
-			//t1 = DateTime.Now;
+			//double conventionalError = 0.0;
+			//double dotTError		= 0.0;
+			//double strassenError	= 0.0;
 			//
-			//monoConventional = t1 - t0;
+			//for (int i = 0; i < resultSize; i++)
+			//{
+			//	conventionalError += Math.Abs(valueCheck[i] - conventionalResult[i]);
+			//	dotTError += Math.Abs(valueCheck[i] - dotTResult[i]);
+			//	strassenError += Math.Abs(valueCheck[i] - strassenResult[i]);
 			//
-			//t0 = DateTime.Now;
-			////var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
-			//var dotTResult = MatrixMult_MonoArray_TransposeDotProduct(matrixB, matrixA, sizeB, sizeA);
-			//t1 = DateTime.Now;
+			//	var error_c_i = conventionalResult[i] - valueCheck[i];
+			//	var error_s_i = strassenResult[i] - valueCheck[i];
 			//
-			//monoDotT = t1 - t0;
+			//	var breakPointB = 0;
+			//	breakPointB++;
+			//}
 			//
-			//Console.WriteLine("[A] * [B] Conventional: {0}s", monoConventional.TotalSeconds);
-			//Console.WriteLine("[A] * [B] Dot Product: {0}s", monoDotT.TotalSeconds);
+			//int breakPoint = 0;
+			//breakPoint++;
+
+
+			Console.WriteLine("[A] * [B] Conventional: {0}s", monoConventionalTime.TotalSeconds);
+			Console.WriteLine("[A] * [B] Dot Product: {0}s", monoDotTTime.TotalSeconds);
+			Console.WriteLine("[A] * [B] Strassen: {0}s", monoStrassenTime.TotalSeconds);
 
 			Console.WriteLine();
 			Console.Write("Press any key to Exit.");
-			var userInput = Console.ReadKey(true);
+			var userInput = Console.ReadKey();
 		}
-
-
 
 
 

@@ -153,7 +153,7 @@ namespace MainProgram
 			// If the matrices are below a certain size, then using the Strassen algorithm isn't worth it. Also, 
 			// the dot transpose method is there for avoid cache misses, but if the matrix is small enough, then 
 			// that's not really a worry either.
-			if (t < 4)
+			if (t < 3)
 			{
 				return MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
 			}
@@ -172,6 +172,11 @@ namespace MainProgram
 			var b21		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
 			var b22		= MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
 
+			var c11     = a11;
+			var c12     = a12;
+			var c21     = a21;
+			var c22     = a22;
+
 			var m1		= new float[childBlockSize];
 			var m2		= new float[childBlockSize];
 			var m3		= new float[childBlockSize];
@@ -182,11 +187,6 @@ namespace MainProgram
 
 			var tm1		= new float[childBlockSize];
 			var tm2		= new float[childBlockSize];
-
-			var c11		= new float[childBlockSize];
-			var c12		= new float[childBlockSize];
-			var c21		= new float[childBlockSize];
-			var c22		= new float[childBlockSize];
 
 			var result	= new float[resultRowCount * resultColumnCount];
 
@@ -328,7 +328,7 @@ namespace MainProgram
 		{
 			// So, once a matrix falls below a certain size, we no longer need to worry so much about cache misses 
 			// and such. At that point, we can just use the conventional algorithm.
-			if (length < 17)
+			if (length < 33)
 			{
 				MatrixMult_Conventional(matrixA, matrixB, result, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
 				return;
@@ -348,6 +348,11 @@ namespace MainProgram
 			var b21 = new float[childBlockSize];
 			var b22 = new float[childBlockSize];
 
+			var c11 = a11;
+			var c12 = a12;
+			var c21 = a21;
+			var c22 = a22;
+
 			var m1	= new float[childBlockSize];
 			var m2	= new float[childBlockSize];
 			var m3	= new float[childBlockSize];
@@ -358,11 +363,6 @@ namespace MainProgram
 
 			var tm1 = new float[childBlockSize];
 			var tm2 = new float[childBlockSize];
-
-			var c11 = new float[childBlockSize];
-			var c12 = new float[childBlockSize];
-			var c21 = new float[childBlockSize];
-			var c22 = new float[childBlockSize];
 
 
 			///
@@ -471,7 +471,6 @@ namespace MainProgram
 					result[offsetR + j] = c22[offsetC + j];
 				}
 			}
-
 		}
 
 		private static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length, int sourceWidth, int sourceHeight)
