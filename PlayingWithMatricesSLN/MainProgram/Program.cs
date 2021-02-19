@@ -21,7 +21,7 @@ namespace MainProgram
 			//var matrixB		= new float[] { 4.0f, 5.0f, 6.0f };
 
 
-			int rWidth		= 500;
+			int rWidth		= 5000;
 			int rHeight		= 1155;
 			int dotLength	= 801;
 
@@ -29,13 +29,13 @@ namespace MainProgram
 																  height: rHeight, 
 																  width: dotLength, 
 																  minValue: -1.0f, 
-																  maxValue: +10.0f);
+																  maxValue: +4.0f);
 
 			var matrixB	= MonoMatrixOperations.CreateRandomMatrix(5, 
 																  height: dotLength, 
 																  width: rWidth, 
 																  minValue: -1.0f, 
-																  maxValue: +2.0f);
+																  maxValue: +3.0f);
 
 			var sizeA		= new Tuple<int, int>(rHeight, dotLength);
 			var sizeB		= new Tuple<int, int>(dotLength, rWidth);
@@ -103,7 +103,7 @@ namespace MainProgram
 
 			string userInput;
 			Console.WriteLine();
-			Console.Write("Press Enter to Exit.");
+			Console.Write("Press Enter twice to Exit.");
 			Console.ReadLine();
 			userInput = Console.ReadLine();
 		}

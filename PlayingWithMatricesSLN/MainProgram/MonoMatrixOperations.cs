@@ -138,9 +138,23 @@ namespace MainProgram
 			var resultColumnCount	= sizeB.Item2;
 			var sharedDimension		= sizeA.Item2;
 
+			var resultSize  = resultRowCount * resultColumnCount;
+			var result      = new float[resultSize];
 
-			var matrixB_T		= new float[sizeB.Item1 * sizeB.Item2];
-			var copyRowOffset	= 0;
+			MatrixMult_TransposeDotProductVector(matrixA, matrixB, result, sizeA, sizeB);
+
+			return result;
+		}
+
+		private static void MatrixMult_TransposeDotProductVector(float[] matrixA, float[] matrixB, float[] result, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
+		{
+			var resultRowCount      = sizeA.Item1;
+			var resultColumnCount   = sizeB.Item2;
+			var sharedDimension     = sizeA.Item2;
+
+
+			var matrixB_T       = new float[sizeB.Item1 * sizeB.Item2];
+			var copyRowOffset   = 0;
 			for (int i = 0; i < sizeB.Item1; i++)
 			{
 				for (int j = 0; j < sizeB.Item2; j++)
@@ -148,11 +162,10 @@ namespace MainProgram
 				copyRowOffset += sizeB.Item2;
 			}
 
-			var resultSize	= resultRowCount * resultColumnCount;
-			var result		= new float[resultSize];
+			var resultSize  = resultRowCount * resultColumnCount;
 
-			int rI			= 0;
-			int aRowOffset	= 0;
+			int rI          = 0;
+			int aRowOffset  = 0;
 
 			var elementCount = Vector<float>.Count;
 			var simdCount = sharedDimension / elementCount;
@@ -181,9 +194,8 @@ namespace MainProgram
 				}
 				aRowOffset += sharedDimension;
 			}
-
-			return result;
 		}
+
 
 		public static float[] MatrixMult_Strassen(float[] matrixA, float[] matrixB, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
 		{
@@ -210,9 +222,9 @@ namespace MainProgram
 			// If the matrices are below a certain size, then using the Strassen algorithm isn't worth it. Also, 
 			// the dot transpose method is there for avoid cache misses, but if the matrix is small enough, then 
 			// that's not really a worry either.
-			if (t < 33)
+			if (t < 129)
 			{
-				return MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
+				return MatrixMult_TransposeDotProductVector(matrixA, matrixB, sizeA, sizeB);
 			}
 
 			var childLength		= t / 2;
@@ -293,6 +305,34 @@ namespace MainProgram
 			///
 			/// Calculate c11, c12, c21, c22
 			/// 
+			//int packedCount     = Vector<float>.Count;
+			//int packedLength    = childBlockSize / packedCount;
+			//int index           = 0;
+			//
+			//for (int i = 0; i < packedLength; i++)
+			//{
+			//	var temp11 = new Vector<float>(m1, index) + new Vector<float>(m4, index) - new Vector<float>(m5, index) + new Vector<float>(m7, index);
+			//	temp11.CopyTo(c11, index);
+			//
+			//	var temp12 = new Vector<float>(m3, index) + new Vector<float>(m5, index);
+			//	temp12.CopyTo(c12, index);
+			//
+			//	var temp21 = new Vector<float>(m2, index) + new Vector<float>(m4, index);
+			//	temp21.CopyTo(c21, index);
+			//	
+			//	var temp22 = new Vector<float>(m1, index) - new Vector<float>(m2, index) + new Vector<float>(m3, index) + new Vector<float>(m6, index);
+			//	temp22.CopyTo(c22, index);
+			//
+			//	index += packedCount;
+			//}
+			//for (; index < childBlockSize; index++)
+			//{
+			//	c11[index] = m1[index] + m4[index] - m5[index] + m7[index];
+			//	c12[index] = m3[index] + m5[index];
+			//	c21[index] = m2[index] + m4[index];
+			//	c22[index] = m1[index] - m2[index] + m3[index] + m6[index];
+			//}
+
 			tm1.Add(m1, m4, childBlockSize);
 			tm2.Subtract(m7, m5, childBlockSize);
 			c11.Add(tm1, tm2, childBlockSize);
@@ -380,14 +420,13 @@ namespace MainProgram
 			return result;
 		}
 
-
 		private static void MatrixMult_StrassenRecursiveComp(float[] matrixA, float[] matrixB, float[] result, int length)
 		{
 			// So, once a matrix falls below a certain size, we no longer need to worry so much about cache misses 
 			// and such. At that point, we can just use the conventional algorithm.
-			if (length < 33)
+			if (length < 129)
 			{
-				MatrixMult_Conventional(matrixA, matrixB, result, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
+				MatrixMult_TransposeDotProductVector(matrixA, matrixB, result, new Tuple<int, int>(length, length), new Tuple<int, int>(length, length));
 				return;
 			}
 
@@ -468,6 +507,34 @@ namespace MainProgram
 			///
 			/// Calculate c11, c12, c21, c22
 			/// 
+			//int packedCount		= Vector<float>.Count;
+			//int packedLength	= childBlockSize / packedCount;
+			//int index			= 0;
+			//
+			//for (int i = 0; i < packedLength; i++)
+			//{
+			//	var temp11 = new Vector<float>(m1, index) + new Vector<float>(m4, index) - new Vector<float>(m5, index) + new Vector<float>(m7, index);
+			//	temp11.CopyTo(c11, index);
+			//
+			//	var temp12 = new Vector<float>(m3, index) + new Vector<float>(m5, index);
+			//	temp12.CopyTo(c12, index);
+			//
+			//	var temp21 = new Vector<float>(m2, index) + new Vector<float>(m4, index);
+			//	temp21.CopyTo(c21, index);
+			//
+			//	var temp22 = new Vector<float>(m1, index) - new Vector<float>(m2, index) + new Vector<float>(m3, index) + new Vector<float>(m6, index);
+			//	temp22.CopyTo(c22, index);
+			//
+			//	index += packedCount;
+			//}
+			//for (; index < childBlockSize; index++)
+			//{
+			//	c11[index] = m1[index] + m4[index] - m5[index] + m7[index];
+			//	c12[index] = m3[index] + m5[index];
+			//	c21[index] = m2[index] + m4[index];
+			//	c22[index] = m1[index] - m2[index] + m3[index] + m6[index];
+			//}
+
 			tm1.Add(m1, m4, childBlockSize);
 			tm2.Subtract(m7, m5, childBlockSize);
 			c11.Add(tm1, tm2, childBlockSize);
@@ -580,14 +647,37 @@ namespace MainProgram
 
 		public static void Add(this float[] result, float[] left, float[] right, int blockSize)
 		{
-			for (int i = 0; i < blockSize; i++)
-				result[i] = left[i] + right[i];
+			var packCount = Vector<float>.Count;
+			var packets = blockSize / packCount;
+
+			int offset = 0;
+			for (int i = 0; i < packets; i++)
+			{
+				var results = new Vector<float>(left, offset) + new Vector<float>(right, offset);
+				results.CopyTo(result, offset);
+				offset += packCount;
+			}
+
+			for (; offset < blockSize; offset++)
+				result[offset] = left[offset] + right[offset];
 		}
 
 		public static void Subtract(this float[] result, float[] left, float[] right, int blockSize)
 		{
-			for (int i = 0; i < blockSize; i++)
-				result[i] = left[i] - right[i];
+
+			var packCount = Vector<float>.Count;
+			var packets = blockSize / packCount;
+
+			int offset = 0;
+			for (int i = 0; i < packets; i++)
+			{
+				var results = new Vector<float>(left, offset) - new Vector<float>(right, offset);
+				results.CopyTo(result, offset);
+				offset += packCount;
+			}
+
+			for (; offset < blockSize; offset++)
+				result[offset] = left[offset] - right[offset];
 		}
 
 	}
