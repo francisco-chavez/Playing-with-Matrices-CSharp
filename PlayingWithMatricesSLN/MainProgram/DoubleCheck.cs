@@ -1,26 +1,24 @@
 ﻿
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 
 namespace MainProgram
 {
 	public static class DoubleCheck
 	{
-		public static double[] MatrixMult_TransposeDotProduct(float[] matrixA, float[] matrixB, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
+
+		public static double[] MatrixMult(float[] matrixA, float[] matrixB, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
 		{
 			if (sizeA.Item2 != sizeB.Item1)
-				throw new Exception( );
+				throw new Exception();
 
-			var resultRowCount		= sizeA.Item1;
-			var resultColumnCount	= sizeB.Item2;
-			var sharedDimension		= sizeA.Item2;
+			var resultRowCount      = sizeA.Item1;
+			var resultColumnCount   = sizeB.Item2;
+			var sharedDimension     = sizeA.Item2;
 
-			var blockSizeA	= sizeA.Item1 * sizeA.Item2;
-			var aPrime		= new double[blockSizeA];
+			var blockSizeA  = sizeA.Item1 * sizeA.Item2;
+			var aPrime      = new double[blockSizeA];
 			for (int i = 0; i < blockSizeA; i++)
 				aPrime[i] = matrixA[i];
 
@@ -35,23 +33,33 @@ namespace MainProgram
 			}
 
 			var resultSize = resultRowCount * resultColumnCount;
-			var result		= new double[resultSize];
+			var result      = new double[resultSize];
 
-			int rI			= 0;
-			int aRowOffset	= 0;
+			int rI          = 0;
+			int aRowOffset  = 0;
+
+			var elementCount = Vector<double>.Count;
+			var simdCount = sharedDimension / elementCount;
 
 			for (int rY = 0; rY < resultRowCount; rY++)
 			{
 				int bRowOffset = 0;
 				for (int rX = 0; rX < resultColumnCount; rX++)
 				{
-					//result[rY * resultColumnCount + rX] = 0.0f;
-					result[rI] = 0.0f;
-					for (int sD = 0; sD < sharedDimension; sD++)
+					result[rI] = 0.0;
+
+					int i_sd = 0;
+					for (int i_e = 0; i_e < simdCount; i_e++)
 					{
-						//result[rY * resultColumnCount + rX] += matrixA[rY * sharedDimension + sD] * matrixB_T[rX * sharedDimension + sD];
-						result[rI] += aPrime[aRowOffset + sD] * matrixB_T[bRowOffset + sD];
+						var vectorA = new Vector<double>(aPrime, aRowOffset + i_sd);
+						var vectorB = new Vector<double>(matrixB_T, bRowOffset + i_sd);
+
+						result[rI] += Vector.Dot(vectorA, vectorB);
+
+						i_sd += elementCount;
 					}
+					for (; i_sd < sharedDimension; i_sd++)
+						result[rI] += matrixA[aRowOffset + i_sd] * matrixB_T[bRowOffset + i_sd];
 					rI++;
 					bRowOffset += sharedDimension;
 				}
@@ -60,6 +68,5 @@ namespace MainProgram
 
 			return result;
 		}
-
 	}
 }

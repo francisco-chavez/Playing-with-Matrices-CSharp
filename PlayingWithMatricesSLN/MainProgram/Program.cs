@@ -21,15 +21,15 @@ namespace MainProgram
 			//var matrixB		= new float[] { 4.0f, 5.0f, 6.0f };
 
 
-			int rWidth		= 5000;
-			int rHeight		= 11550;
-			int dotLength	= 8000;
+			int rWidth		= 500;
+			int rHeight		= 1155;
+			int dotLength	= 801;
 
 			var matrixA = MonoMatrixOperations.CreateRandomMatrix(0, 
 																  height: rHeight, 
 																  width: dotLength, 
 																  minValue: -1.0f, 
-																  maxValue: +1.0f);
+																  maxValue: +10.0f);
 
 			var matrixB	= MonoMatrixOperations.CreateRandomMatrix(5, 
 																  height: dotLength, 
@@ -46,10 +46,10 @@ namespace MainProgram
 			DateTime t1;
 			TimeSpan monoConventionalTime;
 			TimeSpan monoDotTTime;
+			TimeSpan monoDotTSIMDTime;
 			TimeSpan monoStrassenTime;
 
 
-			//var valueCheck = DoubleCheck.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
 
 			t0 = DateTime.Now;
 			var conventionalResult	= MonoMatrixOperations.MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
@@ -62,10 +62,17 @@ namespace MainProgram
 			monoDotTTime = t1 - t0;
 
 			t0 = DateTime.Now;
+			var dotTsimdResult		= MonoMatrixOperations.MatrixMult_TransposeDotProductVector(matrixA, matrixB, sizeA, sizeB);
+			t1 = DateTime.Now;
+			monoDotTSIMDTime = t1 - t0;
+			
+			t0 = DateTime.Now;
 			var strassenResult		= MonoMatrixOperations.MatrixMult_Strassen(matrixA, matrixB, sizeA, sizeB);
 			t1 = DateTime.Now;
 			monoStrassenTime = t1 - t0;
 
+
+			//var valueCheck = DoubleCheck.MatrixMult(matrixA, matrixB, sizeA, sizeB);
 			//var resultSize = rWidth * rHeight;
 			//
 			//double conventionalError = 0.0;
@@ -75,7 +82,7 @@ namespace MainProgram
 			//for (int i = 0; i < resultSize; i++)
 			//{
 			//	conventionalError += Math.Abs(valueCheck[i] - conventionalResult[i]);
-			//	dotTError += Math.Abs(valueCheck[i] - dotTResult[i]);
+			//	dotTError += Math.Abs(valueCheck[i] - dotTsimdResult[i]);
 			//	strassenError += Math.Abs(valueCheck[i] - strassenResult[i]);
 			//
 			//	var error_c_i = conventionalResult[i] - valueCheck[i];
@@ -91,11 +98,14 @@ namespace MainProgram
 
 			Console.WriteLine("[A] * [B] Conventional: {0}s", monoConventionalTime.TotalSeconds);
 			Console.WriteLine("[A] * [B] Dot Product: {0}s", monoDotTTime.TotalSeconds);
+			Console.WriteLine("[A] * [B] Dot Product with SIMD: {0}s", monoDotTSIMDTime.TotalSeconds);
 			Console.WriteLine("[A] * [B] Strassen: {0}s", monoStrassenTime.TotalSeconds);
 
+			string userInput;
 			Console.WriteLine();
-			Console.Write("Press any key to Exit.");
-			var userInput = Console.ReadKey();
+			Console.Write("Press Enter to Exit.");
+			Console.ReadLine();
+			userInput = Console.ReadLine();
 		}
 
 

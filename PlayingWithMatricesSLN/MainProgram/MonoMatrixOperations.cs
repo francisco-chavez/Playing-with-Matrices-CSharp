@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -86,13 +87,13 @@ namespace MainProgram
 			if (sizeA.Item2 != sizeB.Item1)
 				throw new Exception();
 
-			var resultRowCount = sizeA.Item1;
-			var resultColumnCount = sizeB.Item2;
-			var sharedDimension = sizeA.Item2;
+			var resultRowCount		= sizeA.Item1;
+			var resultColumnCount	= sizeB.Item2;
+			var sharedDimension		= sizeA.Item2;
 
 
-			var matrixB_T = new float[sizeB.Item1 * sizeB.Item2];
-			var copyRowOffset = 0;
+			var matrixB_T		= new float[sizeB.Item1 * sizeB.Item2];
+			var copyRowOffset	= 0;
 			for (int i = 0; i < sizeB.Item1; i++)
 			{
 				//var sourceOffset = i * sizeB.Item2;
@@ -101,11 +102,11 @@ namespace MainProgram
 				copyRowOffset += sizeB.Item2;
 			}
 
-			var resultSize = resultRowCount * resultColumnCount;
-			var result = new float[resultSize];
+			var resultSize	= resultRowCount * resultColumnCount;
+			var result		= new float[resultSize];
 
-			int rI = 0;
-			int aRowOffset = 0;
+			int rI			= 0;
+			int aRowOffset	= 0;
 
 			for (int rY = 0; rY < resultRowCount; rY++)
 			{
@@ -119,6 +120,62 @@ namespace MainProgram
 						//result[rY * resultColumnCount + rX] += matrixA[rY * sharedDimension + sD] * matrixB_T[rX * sharedDimension + sD];
 						result[rI] += matrixA[aRowOffset + sD] * matrixB_T[bRowOffset + sD];
 					}
+					rI++;
+					bRowOffset += sharedDimension;
+				}
+				aRowOffset += sharedDimension;
+			}
+
+			return result;
+		}
+		
+		public static float[] MatrixMult_TransposeDotProductVector(float[] matrixA, float[] matrixB, Tuple<int, int> sizeA, Tuple<int, int> sizeB)
+		{
+			if (sizeA.Item2 != sizeB.Item1)
+				throw new Exception();
+
+			var resultRowCount		= sizeA.Item1;
+			var resultColumnCount	= sizeB.Item2;
+			var sharedDimension		= sizeA.Item2;
+
+
+			var matrixB_T		= new float[sizeB.Item1 * sizeB.Item2];
+			var copyRowOffset	= 0;
+			for (int i = 0; i < sizeB.Item1; i++)
+			{
+				for (int j = 0; j < sizeB.Item2; j++)
+					matrixB_T[j * sizeB.Item1 + i] = matrixB[copyRowOffset + j];
+				copyRowOffset += sizeB.Item2;
+			}
+
+			var resultSize	= resultRowCount * resultColumnCount;
+			var result		= new float[resultSize];
+
+			int rI			= 0;
+			int aRowOffset	= 0;
+
+			var elementCount = Vector<float>.Count;
+			var simdCount = sharedDimension / elementCount;
+
+			for (int rY = 0; rY < resultRowCount; rY++)
+			{
+				int bRowOffset = 0;
+				for (int rX = 0; rX < resultColumnCount; rX++)
+				{
+					result[rI] = 0.0f;
+
+					int i_sd = 0;
+					for (int i_e = 0; i_e < simdCount; i_e++)
+					{
+						var vectorA = new Vector<float>(matrixA, aRowOffset + i_sd);
+						var vectorB = new Vector<float>(matrixB_T, bRowOffset + i_sd);
+
+						result[rI] += Vector.Dot(vectorA, vectorB);
+
+						i_sd += elementCount;
+					}
+					for (; i_sd < sharedDimension; i_sd++)
+						result[rI] += matrixA[aRowOffset + i_sd] * matrixB_T[bRowOffset + i_sd];
 					rI++;
 					bRowOffset += sharedDimension;
 				}
