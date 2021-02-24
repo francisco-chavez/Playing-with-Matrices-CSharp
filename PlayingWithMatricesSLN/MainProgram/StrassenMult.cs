@@ -12,15 +12,6 @@ namespace MainProgram
 	public static class StrassenMult
 	{
 
-		private static float[] A11;
-		private static float[] A12;
-		private static float[] A21;
-		private static float[] A22;
-
-		private static float[] B11;
-		private static float[] B12;
-		private static float[] B21;
-		private static float[] B22;
 
 
 		public static float[] MatrixMult(float[] matrixA, float[] matrixB, Tuple<int, int> shapeA, Tuple<int, int> shapeB)
@@ -58,15 +49,19 @@ namespace MainProgram
 				return result;
 			}
 
-			A11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			A12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			A21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			A22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			int childLength		= t / 2;
+			int childBlockSize	= childLength * childLength;
+			int childN			= n - 1;
 
-			B11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			B12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			B21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			B22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+
+			var b11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
 
 			throw new NotImplementedException();
 		}
@@ -117,6 +112,82 @@ namespace MainProgram
 					bRowOffset += sharedDimension;
 				}
 				aRowOffset += sharedDimension;
+			}
+		}
+
+		private static void Add(float[] leftSide, float[] rightSide, float[] result, int blockSize)
+		{
+			int packedCount = Vector<float>.Count;
+
+			for (int i = 0; i < blockSize; i += packedCount)
+			{
+				var l = new Vector<float>(leftSide, i);
+				var r = new Vector<float>(rightSide, i);
+
+				(l + r).CopyTo(result, i);
+			}
+		}
+
+		private static void Add(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
+		{
+			int packedCount = Vector<float>.Count;
+			int resultIndex = 0;
+
+			int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
+			int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
+
+			for (int i = 0; i < length; i++)
+			{
+				for (int j = 0; j < length; j += packedCount)
+				{
+					var l = new Vector<float>(leftSide, offsetL + j);
+					var r = new Vector<float>(rightSide, offsetR + j);
+
+					(l + r).CopyTo(result, resultIndex);
+
+					resultIndex += packedCount;
+				}
+
+				offsetL += rowSize;
+				offsetR += rowSize;
+			}
+		}
+
+		private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int blockSize)
+		{
+			int packedCount     = Vector<float>.Count;
+
+			for (int i = 0; i < blockSize; i += packedCount)
+			{
+				var l = new Vector<float>(leftSide, i);
+				var r = new Vector<float>(rightSide, i);
+
+				(l - r).CopyTo(result, i);
+			}
+		}
+
+		private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
+		{
+			int packedCount = Vector<float>.Count;
+			int resultIndex = 0;
+
+			int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
+			int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
+
+			for (int i = 0; i < length; i++)
+			{
+				for (int j = 0; j < length; j += packedCount)
+				{
+					var l = new Vector<float>(leftSide, offsetL + j);
+					var r = new Vector<float>(rightSide, offsetR + j);
+
+					(l - r).CopyTo(result, resultIndex);
+
+					resultIndex += packedCount;
+				}
+
+				offsetL += rowSize;
+				offsetR += rowSize;
 			}
 		}
 
