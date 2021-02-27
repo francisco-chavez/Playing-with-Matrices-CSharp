@@ -57,6 +57,11 @@ namespace MainProgram
 				}
 			}
 
+			public static void MatrixMult(SubMatrix leftSide, SubMatrix rightSide, SubMatrix result)
+			{
+				throw new NotImplementedException();
+			}
+
 		}
 
 
@@ -147,7 +152,6 @@ namespace MainProgram
 			SubMatrix.Add(b11, b22, tempR);
 			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m1, childLength);
 
-
 			SubMatrix.Add(a21, a22, tempL);
 			//MatrixMult_StrassenRecursiveComp(tm1, b11, m2, childLength);
 
@@ -168,6 +172,103 @@ namespace MainProgram
 			SubMatrix.Add(b21, b22, tempR);
 			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m7, childLength);
 
+
+			///
+			/// Calculate c11, c12, c21, c22
+			/// 
+			SubMatrix.Add(m1, m4, tempL);
+			SubMatrix.Subtract(m7, m5, tempR);
+			SubMatrix.Add(tempL, tempR, c11);
+
+			SubMatrix.Add(m3, m5, c12);
+
+			SubMatrix.Add(m2, m4, c21);
+
+			SubMatrix.Subtract(m1, m2, tempL);
+			SubMatrix.Add(m3, m6, tempR);
+			SubMatrix.Add(tempL, tempR, c22);
+
+
+			///
+			/// Transfer { c11, c12, c21, c22 } to result
+			/// 
+			for (int i = 0; i < childLength; i++)
+			{
+				if (resultRowCount <= i)
+					break;
+
+				int offsetR = i * resultColumnCount;
+				int offsetC = i * childLength;
+
+				for (int j = 0; j < childLength; j++)
+				{
+					if (resultColumnCount <= j)
+						break;
+
+					result[offsetR + j] = c11.RealMatrix[offsetC + j];
+				}
+			}
+
+			for (int i = 0; i < childLength; i++)
+			{
+				if (i >= resultRowCount)
+					break;
+
+				int offsetR = (i * resultColumnCount) + childLength;
+				int offsetC = i * childLength;
+
+				for (int j = 0; j < childLength; j++)
+				{
+					if (j + childLength >= resultColumnCount)
+						break;
+
+					result[offsetR + j] = c12.RealMatrix[offsetC + j];
+				}
+			}
+
+			for (int i = 0; i < childLength; i++)
+			{
+				if (i + childLength >= resultRowCount)
+					break;
+
+				int offsetR = (i + childLength) * resultColumnCount;
+				int offsetC = i * childLength;
+
+				for (int j = 0; j < childLength; j++)
+				{
+					if (j >= resultColumnCount)
+						break;
+
+					result[offsetR + j] = c21.RealMatrix[offsetC + j];
+				}
+			}
+
+			for (int i = 0; i < childLength; i++)
+			{
+				if (i + childLength >= resultRowCount)
+					break;
+
+				int offsetR = ((i + childLength) * resultColumnCount) + childLength;
+				int offsetC = i * childLength;
+
+				for (int j = 0; j < childLength; j++)
+				{
+					if (j + childLength >= resultColumnCount)
+						break;
+
+					result[offsetR + j] = c22.RealMatrix[offsetC + j];
+				}
+			}
+
+
+			///
+			/// Return the result
+			/// 
+			return result;
+		}
+
+		private static void MatrixMult(SubMatrix leftSide, SubMatrix rightSide, SubMatrix result)
+		{
 			throw new NotImplementedException();
 		}
 
