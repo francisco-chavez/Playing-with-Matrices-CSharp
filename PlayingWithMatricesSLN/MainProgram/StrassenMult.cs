@@ -12,6 +12,52 @@ namespace MainProgram
 	public static class StrassenMult
 	{
 
+		private class SubMatrix
+		{
+
+			public	int			Length;
+			public	int			StartX;
+			public	int			StartY;
+			public	int			RealRowWidth;
+
+			public	float[]		RealMatrix;
+
+
+			public static void Add(SubMatrix leftSide, SubMatrix rightSide, SubMatrix result)
+			{
+				var offsetLH	= leftSide.StartY * leftSide.RealRowWidth + leftSide.StartX;
+				var offsetRH	= rightSide.StartY * rightSide.RealRowWidth + rightSide.StartX;
+				var offsetR		= result.StartY * result.RealRowWidth + result.StartX;
+
+				for (int i = 0; i < leftSide.Length; i++)
+				{
+					for (int j = 0; j < leftSide.Length; j++)
+						result.RealMatrix[offsetR + j] = leftSide.RealMatrix[offsetLH + j] + rightSide.RealMatrix[offsetRH + j];
+
+					offsetLH	+= leftSide.RealRowWidth;
+					offsetRH	+= rightSide.RealRowWidth;
+					offsetR		+= result.RealRowWidth;
+				}
+			}
+
+			public static void Subtract(SubMatrix leftSide, SubMatrix rightSide, SubMatrix result)
+			{
+				var offsetLH    = leftSide.StartY * leftSide.RealRowWidth + leftSide.StartX;
+				var offsetRH    = rightSide.StartY * rightSide.RealRowWidth + rightSide.StartX;
+				var offsetR     = result.StartY * result.RealRowWidth + result.StartX;
+
+				for (int i = 0; i < leftSide.Length; i++)
+				{
+					for (int j = 0; j < leftSide.Length; j++)
+						result.RealMatrix[offsetR + j] = leftSide.RealMatrix[offsetLH + j] - rightSide.RealMatrix[offsetRH + j];
+
+					offsetLH	+= leftSide.RealRowWidth;
+					offsetRH	+= rightSide.RealRowWidth;
+					offsetR		+= result.RealRowWidth;
+				}
+			}
+
+		}
 
 
 		public static float[] MatrixMult(float[] matrixA, float[] matrixB, Tuple<int, int> shapeA, Tuple<int, int> shapeB)
@@ -53,15 +99,74 @@ namespace MainProgram
 			int childBlockSize	= childLength * childLength;
 			int childN			= n - 1;
 
-			var a11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var a12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var a21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var a22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var a11		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var a12		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var a21		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var a22		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 
-			var b11 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var b12 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var b21 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
-			var b22 = MonoMatrixOperations.CreateZeroMatrix(childBlockSize);
+			var b11		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var b12		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var b21		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var b22		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+
+			var c11		= a11;
+			var c12		= a12;
+			var c21		= a21;
+			var c22		= a22;
+
+			var tempL	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var tempR	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+
+			var m1		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m2		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m3		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m4		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m5		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m6		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m7		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+
+
+			///
+			/// Break matrices { A, B } into matrices { A11, A12, A21, A22, B11, B12, B21, B22 }
+			///
+			FillInBlock(result: a11.RealMatrix, source: matrixA, startRow: 0,			startColumn: 0,				length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+			FillInBlock(result: a12.RealMatrix, source: matrixA, startRow: 0,			startColumn: childLength,	length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+			FillInBlock(result: a21.RealMatrix, source: matrixA, startRow: childLength, startColumn: 0,				length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+			FillInBlock(result: a22.RealMatrix, source: matrixA, startRow: childLength, startColumn: childLength,	length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+
+			FillInBlock(result: b11.RealMatrix, source: matrixB, startRow: 0,			startColumn: 0,				length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+			FillInBlock(result: b12.RealMatrix, source: matrixB, startRow: 0,			startColumn: childLength,	length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+			FillInBlock(result: b21.RealMatrix, source: matrixB, startRow: childLength, startColumn: 0,				length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+			FillInBlock(result: b22.RealMatrix, source: matrixB, startRow: childLength, startColumn: childLength,	length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+
+
+			///
+			/// Calculte m1 to m7
+			/// 
+			SubMatrix.Add(a11, a22, tempL);
+			SubMatrix.Add(b11, b22, tempR);
+			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m1, childLength);
+
+
+			SubMatrix.Add(a21, a22, tempL);
+			//MatrixMult_StrassenRecursiveComp(tm1, b11, m2, childLength);
+
+			SubMatrix.Subtract(b12, b22, tempR);
+			//MatrixMult_StrassenRecursiveComp(a11, tm2, m3, childLength);
+
+			SubMatrix.Subtract(b21, b11, tempR);
+			//MatrixMult_StrassenRecursiveComp(a22, tm2, m4, childLength);
+
+			SubMatrix.Add(a11, a12, tempL);
+			//MatrixMult_StrassenRecursiveComp(tm1, b22, m5, childLength);
+
+			SubMatrix.Subtract(a21, a11, tempL);
+			SubMatrix.Add(b11, b12, tempR);
+			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m6, childLength);
+
+			SubMatrix.Subtract(a12, a22, tempL);
+			SubMatrix.Add(b21, b22, tempR);
+			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m7, childLength);
 
 			throw new NotImplementedException();
 		}
@@ -114,6 +219,28 @@ namespace MainProgram
 				aRowOffset += sharedDimension;
 			}
 		}
+
+
+		private static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length, int sourceWidth, int sourceHeight)
+		{
+			for (int i = 0; i < length; i++)
+			{
+				var sourceRow = i + startRow;
+
+				if (sourceHeight <= sourceRow)
+					break;
+
+				for (int j = 0; j < length; j++)
+				{
+					var sourceColumn = j + startColumn;
+					if (sourceWidth <= sourceColumn)
+						break;
+
+					result[i * length + j] = source[sourceRow * sourceWidth + sourceColumn];
+				}
+			}
+		}
+
 
 		private static void Add(float[] leftSide, float[] rightSide, float[] result, int blockSize)
 		{
