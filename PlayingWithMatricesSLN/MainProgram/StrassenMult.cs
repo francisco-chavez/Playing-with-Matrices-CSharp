@@ -65,6 +65,11 @@ namespace MainProgram
 		}
 
 
+		/// <summary>
+		/// This needs to be equal to "2^n + 1" and "Vector&lt;float&gt;.Count &lt;= 2^n".
+		/// </summary>
+		private static int SwitchLength = 129;
+
 		public static float[] MatrixMult(float[] matrixA, float[] matrixB, Tuple<int, int> shapeA, Tuple<int, int> shapeB)
 		{
 			if (shapeA.Item2 != shapeB.Item1)
@@ -90,7 +95,7 @@ namespace MainProgram
 				n++;
 			}
 
-			if (t < 129)
+			if (t < SwitchLength)
 			{
 				var b_t = new float[shapeB.Item1 * shapeB.Item2];
 
@@ -150,27 +155,27 @@ namespace MainProgram
 			/// 
 			SubMatrix.Add(a11, a22, tempL);
 			SubMatrix.Add(b11, b22, tempR);
-			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m1, childLength);
+			MatrixMult(tempL, tempR, m1);
 
 			SubMatrix.Add(a21, a22, tempL);
-			//MatrixMult_StrassenRecursiveComp(tm1, b11, m2, childLength);
+			MatrixMult(tempL, b11, m2);
 
 			SubMatrix.Subtract(b12, b22, tempR);
-			//MatrixMult_StrassenRecursiveComp(a11, tm2, m3, childLength);
+			MatrixMult(a11, tempR, m3);
 
 			SubMatrix.Subtract(b21, b11, tempR);
-			//MatrixMult_StrassenRecursiveComp(a22, tm2, m4, childLength);
+			MatrixMult(a22, tempR, m4);
 
 			SubMatrix.Add(a11, a12, tempL);
-			//MatrixMult_StrassenRecursiveComp(tm1, b22, m5, childLength);
+			MatrixMult(tempL, b22, m5);
 
 			SubMatrix.Subtract(a21, a11, tempL);
 			SubMatrix.Add(b11, b12, tempR);
-			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m6, childLength);
+			MatrixMult(tempL, tempR, m6);
 
 			SubMatrix.Subtract(a12, a22, tempL);
 			SubMatrix.Add(b21, b22, tempR);
-			//MatrixMult_StrassenRecursiveComp(tm1, tm2, m7, childLength);
+			MatrixMult(tempL, tempR, m7);
 
 
 			///
@@ -269,7 +274,84 @@ namespace MainProgram
 
 		private static void MatrixMult(SubMatrix leftSide, SubMatrix rightSide, SubMatrix result)
 		{
-			throw new NotImplementedException();
+			if (leftSide.Length < SwitchLength)
+			{
+				SubMatrix.MatrixMult(leftSide, rightSide, result);
+				return;
+			}
+
+			var childLength		= leftSide.Length / 2;
+			var childBlockSize	= childLength * childLength;
+
+			var a11		= new SubMatrix() { RealMatrix = leftSide.RealMatrix,	Length = childLength, RealRowWidth = leftSide.RealRowWidth,		StartX = leftSide.StartX,					StartY = leftSide.StartY };
+			var a12		= new SubMatrix() { RealMatrix = leftSide.RealMatrix,	Length = childLength, RealRowWidth = leftSide.RealRowWidth,		StartX = leftSide.StartX + childLength,		StartY = leftSide.StartY };
+			var a21		= new SubMatrix() { RealMatrix = leftSide.RealMatrix,	Length = childLength, RealRowWidth = leftSide.RealRowWidth,		StartX = leftSide.StartX,					StartY = leftSide.StartY + childLength };
+			var a22		= new SubMatrix() { RealMatrix = leftSide.RealMatrix,	Length = childLength, RealRowWidth = leftSide.RealRowWidth,		StartX = leftSide.StartX + childLength,		StartY = leftSide.StartY + childLength };
+
+			var b11		= new SubMatrix() { RealMatrix = rightSide.RealMatrix,	Length = childLength, RealRowWidth = rightSide.RealRowWidth,	StartX = rightSide.StartX,					StartY = rightSide.StartY };
+			var b12		= new SubMatrix() { RealMatrix = rightSide.RealMatrix,	Length = childLength, RealRowWidth = rightSide.RealRowWidth,	StartX = rightSide.StartX + childLength,	StartY = rightSide.StartY };
+			var b21		= new SubMatrix() { RealMatrix = rightSide.RealMatrix,	Length = childLength, RealRowWidth = rightSide.RealRowWidth,	StartX = rightSide.StartX,					StartY = rightSide.StartY + childLength };
+			var b22		= new SubMatrix() { RealMatrix = rightSide.RealMatrix,	Length = childLength, RealRowWidth = rightSide.RealRowWidth,	StartX = rightSide.StartX + childLength,	StartY = rightSide.StartY + childLength };
+
+			var c11		= new SubMatrix() { RealMatrix = result.RealMatrix,		Length = childLength, RealRowWidth = result.RealRowWidth,		StartX = result.StartX,						StartY = result.StartY };
+			var c12		= new SubMatrix() { RealMatrix = result.RealMatrix,		Length = childLength, RealRowWidth = result.RealRowWidth,		StartX = result.StartX + childLength,		StartY = result.StartY };
+			var c21		= new SubMatrix() { RealMatrix = result.RealMatrix,		Length = childLength, RealRowWidth = result.RealRowWidth,		StartX = result.StartX,						StartY = result.StartY + childLength };
+			var c22		= new SubMatrix() { RealMatrix = result.RealMatrix,		Length = childLength, RealRowWidth = result.RealRowWidth,		StartX = result.StartX + childLength,		StartY = result.StartY + childLength };
+
+			var tempL	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var tempR	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+
+			var m1		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m2		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m3		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m4		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m5		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m6		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var m7		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+
+
+			///
+			/// Calculte m1 to m7
+			/// 
+			SubMatrix.Add(a11, a22, tempL);
+			SubMatrix.Add(b11, b22, tempR);
+			MatrixMult(tempL, tempR, m1);
+
+			SubMatrix.Add(a21, a22, tempL);
+			MatrixMult(tempL, b11, m2);
+
+			SubMatrix.Subtract(b12, b22, tempR);
+			MatrixMult(a11, tempR, m3);
+
+			SubMatrix.Subtract(b21, b11, tempR);
+			MatrixMult(a22, tempR, m4);
+
+			SubMatrix.Add(a11, a12, tempL);
+			MatrixMult(tempL, b22, m5);
+
+			SubMatrix.Subtract(a21, a11, tempL);
+			SubMatrix.Add(b11, b12, tempR);
+			MatrixMult(tempL, tempR, m6);
+
+			SubMatrix.Subtract(a12, a22, tempL);
+			SubMatrix.Add(b21, b22, tempR);
+			MatrixMult(tempL, tempR, m7);
+
+
+			///
+			/// Calculate c11, c12, c21, c22
+			/// 
+			SubMatrix.Add(m1, m4, tempL);
+			SubMatrix.Subtract(m7, m5, tempR);
+			SubMatrix.Add(tempL, tempR, c11);
+
+			SubMatrix.Add(m3, m5, c12);
+
+			SubMatrix.Add(m2, m4, c21);
+
+			SubMatrix.Subtract(m1, m2, tempL);
+			SubMatrix.Add(m3, m6, tempR);
+			SubMatrix.Add(tempL, tempR, c22);
 		}
 
 		private static void MatrixMult_TransposeThenDotProducts(float[] matrixA, float[] matrixB, float[] result, float[] b_T, Tuple<int, int> shapeA, Tuple<int, int> shapeB)
@@ -343,81 +425,81 @@ namespace MainProgram
 		}
 
 
-		private static void Add(float[] leftSide, float[] rightSide, float[] result, int blockSize)
-		{
-			int packedCount = Vector<float>.Count;
+		//private static void Add(float[] leftSide, float[] rightSide, float[] result, int blockSize)
+		//{
+		//	int packedCount = Vector<float>.Count;
 
-			for (int i = 0; i < blockSize; i += packedCount)
-			{
-				var l = new Vector<float>(leftSide, i);
-				var r = new Vector<float>(rightSide, i);
+		//	for (int i = 0; i < blockSize; i += packedCount)
+		//	{
+		//		var l = new Vector<float>(leftSide, i);
+		//		var r = new Vector<float>(rightSide, i);
 
-				(l + r).CopyTo(result, i);
-			}
-		}
+		//		(l + r).CopyTo(result, i);
+		//	}
+		//}
 
-		private static void Add(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
-		{
-			int packedCount = Vector<float>.Count;
-			int resultIndex = 0;
+		//private static void Add(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
+		//{
+		//	int packedCount = Vector<float>.Count;
+		//	int resultIndex = 0;
 
-			int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
-			int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
+		//	int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
+		//	int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
 
-			for (int i = 0; i < length; i++)
-			{
-				for (int j = 0; j < length; j += packedCount)
-				{
-					var l = new Vector<float>(leftSide, offsetL + j);
-					var r = new Vector<float>(rightSide, offsetR + j);
+		//	for (int i = 0; i < length; i++)
+		//	{
+		//		for (int j = 0; j < length; j += packedCount)
+		//		{
+		//			var l = new Vector<float>(leftSide, offsetL + j);
+		//			var r = new Vector<float>(rightSide, offsetR + j);
 
-					(l + r).CopyTo(result, resultIndex);
+		//			(l + r).CopyTo(result, resultIndex);
 
-					resultIndex += packedCount;
-				}
+		//			resultIndex += packedCount;
+		//		}
 
-				offsetL += rowSize;
-				offsetR += rowSize;
-			}
-		}
+		//		offsetL += rowSize;
+		//		offsetR += rowSize;
+		//	}
+		//}
 
-		private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int blockSize)
-		{
-			int packedCount     = Vector<float>.Count;
+		//private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int blockSize)
+		//{
+		//	int packedCount     = Vector<float>.Count;
 
-			for (int i = 0; i < blockSize; i += packedCount)
-			{
-				var l = new Vector<float>(leftSide, i);
-				var r = new Vector<float>(rightSide, i);
+		//	for (int i = 0; i < blockSize; i += packedCount)
+		//	{
+		//		var l = new Vector<float>(leftSide, i);
+		//		var r = new Vector<float>(rightSide, i);
 
-				(l - r).CopyTo(result, i);
-			}
-		}
+		//		(l - r).CopyTo(result, i);
+		//	}
+		//}
 
-		private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
-		{
-			int packedCount = Vector<float>.Count;
-			int resultIndex = 0;
+		//private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
+		//{
+		//	int packedCount = Vector<float>.Count;
+		//	int resultIndex = 0;
 
-			int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
-			int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
+		//	int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
+		//	int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
 
-			for (int i = 0; i < length; i++)
-			{
-				for (int j = 0; j < length; j += packedCount)
-				{
-					var l = new Vector<float>(leftSide, offsetL + j);
-					var r = new Vector<float>(rightSide, offsetR + j);
+		//	for (int i = 0; i < length; i++)
+		//	{
+		//		for (int j = 0; j < length; j += packedCount)
+		//		{
+		//			var l = new Vector<float>(leftSide, offsetL + j);
+		//			var r = new Vector<float>(rightSide, offsetR + j);
 
-					(l - r).CopyTo(result, resultIndex);
+		//			(l - r).CopyTo(result, resultIndex);
 
-					resultIndex += packedCount;
-				}
+		//			resultIndex += packedCount;
+		//		}
 
-				offsetL += rowSize;
-				offsetR += rowSize;
-			}
-		}
+		//		offsetL += rowSize;
+		//		offsetR += rowSize;
+		//	}
+		//}
 
 	}
 }
