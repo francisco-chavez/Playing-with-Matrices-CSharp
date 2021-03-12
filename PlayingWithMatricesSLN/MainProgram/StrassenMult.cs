@@ -121,7 +121,7 @@ namespace MainProgram
 		/// <summary>
 		/// This needs to be equal to "2^n + 1" and "Vector&lt;float&gt;.Count &lt;= 2^n".
 		/// </summary>
-		private static int SwitchLength = 129;
+		private static int SwitchLength = 65;
 
 		public static float[] MatrixMult(float[] matrixA, float[] matrixB, Tuple<int, int> shapeA, Tuple<int, int> shapeB)
 		{

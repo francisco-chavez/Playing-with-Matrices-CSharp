@@ -20,10 +20,9 @@ namespace MainProgram
 			//var matrixA		= new float[] { 1.0f, 2.0f, 3.0f };
 			//var matrixB		= new float[] { 4.0f, 5.0f, 6.0f };
 
-
-			int rWidth		= 1001;
-			int rHeight		= 2548;
-			int dotLength	= 3571;
+			int rHeight		=  9000;
+			int dotLength	= 10000;
+			int rWidth		=  8000;
 
 			var matrixA = MonoMatrixOperations.CreateRandomMatrix(0, 
 																  height: rHeight, 
@@ -44,32 +43,44 @@ namespace MainProgram
 
 			DateTime t0;
 			DateTime t1;
+			TimeSpan monoConventional;
 			TimeSpan monoDotTTime;
 			TimeSpan monoDotTSIMDTime;
 			TimeSpan monoStrassenTime;
 			TimeSpan newStrassenTime;
 
 
+			GC.Collect();
 
+			//t0 = DateTime.Now;
+			//var oldSchool			= MonoMatrixOperations.MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
+			//GC.Collect();
+			//t1 = DateTime.Now;
+			//monoConventional		= t1 - t0;
+			
 			t0 = DateTime.Now;
 			var dotTResult			= MonoMatrixOperations.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
+			GC.Collect();
 			t1 = DateTime.Now;
-			monoDotTTime = t1 - t0;
-
+			monoDotTTime			= t1 - t0;
+			
 			t0 = DateTime.Now;
 			var dotTsimdResult		= MonoMatrixOperations.MatrixMult_TransposeDotProductVector(matrixA, matrixB, sizeA, sizeB);
+			GC.Collect();
 			t1 = DateTime.Now;
-			monoDotTSIMDTime = t1 - t0;
+			monoDotTSIMDTime		= t1 - t0;
 			
 			t0 = DateTime.Now;
 			var strassenResult		= MonoMatrixOperations.MatrixMult_Strassen(matrixA, matrixB, sizeA, sizeB);
+			GC.Collect();
 			t1 = DateTime.Now;
-			monoStrassenTime = t1 - t0;
+			monoStrassenTime		= t1 - t0;
 
 			t0 = DateTime.Now;
 			var strassenV2Result	= StrassenMult.MatrixMult(matrixA, matrixB, sizeA, sizeB);
+			GC.Collect();
 			t1 = DateTime.Now;
-			newStrassenTime = t1 - t0;
+			newStrassenTime			= t1 - t0;
 
 
 
@@ -103,10 +114,11 @@ namespace MainProgram
 			// breakPoint++;
 
 
-			Console.WriteLine("[A] * [B] Dot Product: {0}s", monoDotTTime.TotalSeconds);
+			//Console.WriteLine("[A] * [B] Conventional:          {0}s", monoConventional.TotalSeconds);
+			Console.WriteLine("[A] * [B] Dot Product:           {0}s", monoDotTTime.TotalSeconds);
 			Console.WriteLine("[A] * [B] Dot Product with SIMD: {0}s", monoDotTSIMDTime.TotalSeconds);
-			Console.WriteLine("[A] * [B] Strassen:   {0}s", monoStrassenTime.TotalSeconds);
-			Console.WriteLine("[A] * [B] Strassen 2: {0}s", newStrassenTime.TotalSeconds);
+			Console.WriteLine("[A] * [B] Strassen:              {0}s", monoStrassenTime.TotalSeconds);
+			Console.WriteLine("[A] * [B] Strassen 2:            {0}s", newStrassenTime.TotalSeconds);
 
 			string userInput;
 			Console.WriteLine();
