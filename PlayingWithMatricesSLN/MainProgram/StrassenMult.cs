@@ -57,11 +57,64 @@ namespace MainProgram
 				}
 			}
 
-			public static void MatrixMult(SubMatrix leftSide, SubMatrix rightSide, SubMatrix result)
+			public static void MatrixMult(SubMatrix leftSide, SubMatrix rightSide, SubMatrix rightSide_T, SubMatrix result)
 			{
-				throw new NotImplementedException();
-			}
+				/// 
+				/// Note:
+				/// - leftSide.Length == rightSide.Length == rightSide_T.Length
+				/// - rightSide_T.RealMatrix.Length == (leftSide.Length * leftSide.Length)
+				/// 
+				/// SubMatrix rightSide_T was created to be the size at which we switch to more conventional matrix 
+				/// multiplication. More conventional matrix multiplication runs faster if we transpose the right hand
+				/// side matrix and use that instead because it cuts down on the number of cache misses and 
+				/// cache-reloads.
+				/// 
 
+				///
+				/// Transpose the rightSide SubMatrix onto rightSide_T.
+				/// 
+				for (int i = 0; i < leftSide.Length; i++)
+				{
+					int sourceRow		= rightSide.StartY + i;
+					int sourceOffset	= sourceRow * rightSide.RealRowWidth + rightSide.StartX;
+
+					for (int j = 0; j < leftSide.Length; j++)
+					{
+						rightSide_T.RealMatrix[j * leftSide.Length + i] = rightSide.RealMatrix[sourceOffset + j];
+					}
+				}
+
+				var elementCount	= Vector<float>.Count;
+				var simdCount		= leftSide.Length / elementCount;
+
+				for (int rY = 0; rY < leftSide.Length; rY++)
+				{
+					var resultIndexOffset = result.StartY + rY;
+					resultIndexOffset *= result.RealRowWidth;
+					resultIndexOffset += result.StartX;
+
+					var leftIndexOffset = leftSide.StartY + rY;
+					leftIndexOffset *= leftSide.RealRowWidth;
+					leftIndexOffset += leftSide.StartX;
+
+					int bRowOffset = 0;
+
+					for (int rX = 0; rX < leftSide.Length; rX++)
+					{
+						result.RealMatrix[resultIndexOffset + rX] = 0.0f;
+
+						for (int rS = 0; rS < leftSide.Length; rS += elementCount)
+						{
+							var vectorA = new Vector<float>(leftSide.RealMatrix, leftIndexOffset + rS);
+							var vectorB = new Vector<float>(rightSide_T.RealMatrix, bRowOffset + rS);
+
+							result.RealMatrix[resultIndexOffset + rX] += Vector.Dot(vectorA, vectorB);
+						}
+
+						bRowOffset += leftSide.Length;
+					}
+				}
+			}
 		}
 
 
@@ -124,6 +177,9 @@ namespace MainProgram
 			var c21		= a21;
 			var c22		= a22;
 
+			int limitLength = SwitchLength - 1;
+			var b_T		= new SubMatrix() { RealMatrix = new float[limitLength * limitLength], StartX = 0, StartY = 0, Length = limitLength, RealRowWidth = limitLength };
+
 			var tempL	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 			var tempR	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 
@@ -155,27 +211,27 @@ namespace MainProgram
 			/// 
 			SubMatrix.Add(a11, a22, tempL);
 			SubMatrix.Add(b11, b22, tempR);
-			MatrixMult(tempL, tempR, m1);
+			MatrixMult(tempL, tempR, b_T, m1);
 
 			SubMatrix.Add(a21, a22, tempL);
-			MatrixMult(tempL, b11, m2);
+			MatrixMult(tempL, b11, b_T, m2);
 
 			SubMatrix.Subtract(b12, b22, tempR);
-			MatrixMult(a11, tempR, m3);
+			MatrixMult(a11, tempR, b_T, m3);
 
 			SubMatrix.Subtract(b21, b11, tempR);
-			MatrixMult(a22, tempR, m4);
+			MatrixMult(a22, tempR, b_T, m4);
 
 			SubMatrix.Add(a11, a12, tempL);
-			MatrixMult(tempL, b22, m5);
+			MatrixMult(tempL, b22, b_T, m5);
 
 			SubMatrix.Subtract(a21, a11, tempL);
 			SubMatrix.Add(b11, b12, tempR);
-			MatrixMult(tempL, tempR, m6);
+			MatrixMult(tempL, tempR, b_T, m6);
 
 			SubMatrix.Subtract(a12, a22, tempL);
 			SubMatrix.Add(b21, b22, tempR);
-			MatrixMult(tempL, tempR, m7);
+			MatrixMult(tempL, tempR, b_T, m7);
 
 
 			///
@@ -272,11 +328,11 @@ namespace MainProgram
 			return result;
 		}
 
-		private static void MatrixMult(SubMatrix leftSide, SubMatrix rightSide, SubMatrix result)
+		private static void MatrixMult(SubMatrix leftSide, SubMatrix rightSide, SubMatrix b_T, SubMatrix result)
 		{
 			if (leftSide.Length < SwitchLength)
 			{
-				SubMatrix.MatrixMult(leftSide, rightSide, result);
+				SubMatrix.MatrixMult(leftSide, rightSide, b_T, result);
 				return;
 			}
 
@@ -315,27 +371,27 @@ namespace MainProgram
 			/// 
 			SubMatrix.Add(a11, a22, tempL);
 			SubMatrix.Add(b11, b22, tempR);
-			MatrixMult(tempL, tempR, m1);
+			MatrixMult(tempL, tempR, b_T, m1);
 
 			SubMatrix.Add(a21, a22, tempL);
-			MatrixMult(tempL, b11, m2);
+			MatrixMult(tempL, b11, b_T, m2);
 
 			SubMatrix.Subtract(b12, b22, tempR);
-			MatrixMult(a11, tempR, m3);
+			MatrixMult(a11, tempR, b_T, m3);
 
 			SubMatrix.Subtract(b21, b11, tempR);
-			MatrixMult(a22, tempR, m4);
+			MatrixMult(a22, tempR, b_T, m4);
 
 			SubMatrix.Add(a11, a12, tempL);
-			MatrixMult(tempL, b22, m5);
+			MatrixMult(tempL, b22, b_T, m5);
 
 			SubMatrix.Subtract(a21, a11, tempL);
 			SubMatrix.Add(b11, b12, tempR);
-			MatrixMult(tempL, tempR, m6);
+			MatrixMult(tempL, tempR, b_T, m6);
 
 			SubMatrix.Subtract(a12, a22, tempL);
 			SubMatrix.Add(b21, b22, tempR);
-			MatrixMult(tempL, tempR, m7);
+			MatrixMult(tempL, tempR, b_T, m7);
 
 
 			///

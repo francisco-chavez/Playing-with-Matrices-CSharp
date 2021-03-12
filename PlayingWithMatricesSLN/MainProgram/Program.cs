@@ -21,9 +21,9 @@ namespace MainProgram
 			//var matrixB		= new float[] { 4.0f, 5.0f, 6.0f };
 
 
-			int rWidth		= 5000;
-			int rHeight		= 1155;
-			int dotLength	= 801;
+			int rWidth		= 1001;
+			int rHeight		= 2548;
+			int dotLength	= 3571;
 
 			var matrixA = MonoMatrixOperations.CreateRandomMatrix(0, 
 																  height: rHeight, 
@@ -44,17 +44,12 @@ namespace MainProgram
 
 			DateTime t0;
 			DateTime t1;
-			TimeSpan monoConventionalTime;
 			TimeSpan monoDotTTime;
 			TimeSpan monoDotTSIMDTime;
 			TimeSpan monoStrassenTime;
+			TimeSpan newStrassenTime;
 
 
-
-			t0 = DateTime.Now;
-			var conventionalResult	= MonoMatrixOperations.MatrixMult_Conventional(matrixA, matrixB, sizeA, sizeB);
-			t1 = DateTime.Now;
-			monoConventionalTime = t1 - t0;
 
 			t0 = DateTime.Now;
 			var dotTResult			= MonoMatrixOperations.MatrixMult_TransposeDotProduct(matrixA, matrixB, sizeA, sizeB);
@@ -71,35 +66,47 @@ namespace MainProgram
 			t1 = DateTime.Now;
 			monoStrassenTime = t1 - t0;
 
-
-			//var valueCheck = DoubleCheck.MatrixMult(matrixA, matrixB, sizeA, sizeB);
-			//var resultSize = rWidth * rHeight;
-			//
-			//double conventionalError = 0.0;
-			//double dotTError		= 0.0;
-			//double strassenError	= 0.0;
-			//
-			//for (int i = 0; i < resultSize; i++)
-			//{
-			//	conventionalError += Math.Abs(valueCheck[i] - conventionalResult[i]);
-			//	dotTError += Math.Abs(valueCheck[i] - dotTsimdResult[i]);
-			//	strassenError += Math.Abs(valueCheck[i] - strassenResult[i]);
-			//
-			//	var error_c_i = conventionalResult[i] - valueCheck[i];
-			//	var error_s_i = strassenResult[i] - valueCheck[i];
-			//
-			//	var breakPointB = 0;
-			//	breakPointB++;
-			//}
-			//
-			//int breakPoint = 0;
-			//breakPoint++;
+			t0 = DateTime.Now;
+			var strassenV2Result	= StrassenMult.MatrixMult(matrixA, matrixB, sizeA, sizeB);
+			t1 = DateTime.Now;
+			newStrassenTime = t1 - t0;
 
 
-			Console.WriteLine("[A] * [B] Conventional: {0}s", monoConventionalTime.TotalSeconds);
+
+			// var valueCheck = DoubleCheck.MatrixMult(matrixA, matrixB, sizeA, sizeB);
+			// var resultSize = rWidth * rHeight;
+			// 
+			// var dotTError			= 0.0;
+			// var strassenError		= 0.0;
+			// var strassen2Error		= 0.0;
+			// 
+			// var maxDotTError		= 0.0;
+			// var maxStrassenError	= 0.0;
+			// var maxStrassen2Error	= 0.0;
+			// 
+			// for (int i = 0; i < resultSize; i++)
+			// {
+			// 	var error = Math.Abs(valueCheck[i] - dotTsimdResult[i]);
+			// 	dotTError += error;
+			// 	maxDotTError = Math.Max(maxDotTError, error);
+			// 
+			// 	error = Math.Abs(valueCheck[i] - strassenResult[i]);
+			// 	strassenError += error;
+			// 	maxStrassenError = Math.Max(maxStrassenError, error);
+			// 
+			// 	error = Math.Abs(valueCheck[i] - strassenV2Result[i]);
+			// 	strassen2Error += error;
+			// 	maxStrassen2Error = Math.Max(maxStrassen2Error, error);
+			// }
+			// 
+			// int breakPoint = 0;
+			// breakPoint++;
+
+
 			Console.WriteLine("[A] * [B] Dot Product: {0}s", monoDotTTime.TotalSeconds);
 			Console.WriteLine("[A] * [B] Dot Product with SIMD: {0}s", monoDotTSIMDTime.TotalSeconds);
-			Console.WriteLine("[A] * [B] Strassen: {0}s", monoStrassenTime.TotalSeconds);
+			Console.WriteLine("[A] * [B] Strassen:   {0}s", monoStrassenTime.TotalSeconds);
+			Console.WriteLine("[A] * [B] Strassen 2: {0}s", newStrassenTime.TotalSeconds);
 
 			string userInput;
 			Console.WriteLine();
