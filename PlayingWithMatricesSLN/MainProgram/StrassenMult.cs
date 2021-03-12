@@ -12,6 +12,10 @@ namespace MainProgram
 	public static class StrassenMult
 	{
 
+		/// <summary>
+		/// This is a wrapper to part (or all) of an 'N' by 'N' matrix. It is assumed that 'N' is a power of 2 
+		/// and that Vector&lt;float&gt; fits inside of 'N' nicely. We are assuming the same for Length.
+		/// </summary>
 		private class SubMatrix
 		{
 
@@ -78,24 +82,30 @@ namespace MainProgram
 					int sourceRow		= rightSide.StartY + i;
 					int sourceOffset	= sourceRow * rightSide.RealRowWidth + rightSide.StartX;
 
+					int offsetT = 0;
 					for (int j = 0; j < leftSide.Length; j++)
 					{
-						rightSide_T.RealMatrix[j * leftSide.Length + i] = rightSide.RealMatrix[sourceOffset + j];
+						//rightSide_T.RealMatrix[j * leftSide.Length + i] = rightSide.RealMatrix[sourceOffset + j];
+						rightSide_T.RealMatrix[offsetT + i] = rightSide.RealMatrix[sourceOffset + j];
+
 					}
+					offsetT += leftSide.Length;
 				}
 
 				var elementCount	= Vector<float>.Count;
 				var simdCount		= leftSide.Length / elementCount;
 
+				var resultIndexOffset	= result.StartY * result.RealRowWidth + result.StartX;
+				var leftIndexOffset		= leftSide.StartY * leftSide.RealRowWidth + leftSide.StartX;
 				for (int rY = 0; rY < leftSide.Length; rY++)
 				{
-					var resultIndexOffset = result.StartY + rY;
-					resultIndexOffset *= result.RealRowWidth;
-					resultIndexOffset += result.StartX;
+					//var resultIndexOffset = result.StartY + rY;
+					//resultIndexOffset *= result.RealRowWidth;
+					//resultIndexOffset += result.StartX;
 
-					var leftIndexOffset = leftSide.StartY + rY;
-					leftIndexOffset *= leftSide.RealRowWidth;
-					leftIndexOffset += leftSide.StartX;
+					//var leftIndexOffset = leftSide.StartY + rY;
+					//leftIndexOffset *= leftSide.RealRowWidth;
+					//leftIndexOffset += leftSide.StartX;
 
 					int bRowOffset = 0;
 
@@ -113,8 +123,12 @@ namespace MainProgram
 
 						bRowOffset += leftSide.Length;
 					}
+
+					resultIndexOffset += result.RealRowWidth;
+					leftIndexOffset += leftSide.RealRowWidth;
 				}
 			}
+
 		}
 
 
@@ -133,10 +147,12 @@ namespace MainProgram
 			var sharedDimension     = shapeA.Item2;
 			var resultBlockSize		= resultRowCount * resultColumnCount;
 
+			// Find the largest dimension to use as our starting point for length 't'
 			var maxD = shapeA.Item1;
 			maxD = maxD < shapeA.Item2 ? shapeA.Item2 : maxD;
 			maxD = maxD < shapeB.Item2 ? shapeB.Item2 : maxD;
 
+			// Find length 't'
 			int n = 0;
 			int t = 1;
 
@@ -148,6 +164,7 @@ namespace MainProgram
 				n++;
 			}
 
+			// If 't' is less than our switch length, then use a more "conventional" way to multiply matrices
 			if (t < SwitchLength)
 			{
 				var b_t = new float[shapeB.Item1 * shapeB.Item2];
@@ -158,6 +175,7 @@ namespace MainProgram
 				return result;
 			}
 
+			// Create the initial matrices and sub-matrices
 			int childLength		= t / 2;
 			int childBlockSize	= childLength * childLength;
 			int childN			= n - 1;
@@ -172,6 +190,7 @@ namespace MainProgram
 			var b21		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 			var b22		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 
+			// By the time we are using 'C's sub-matrices, we no longer need 'A's sub-matrices, so we might as well re-use them.
 			var c11		= a11;
 			var c12		= a12;
 			var c21		= a21;
@@ -253,12 +272,13 @@ namespace MainProgram
 			///
 			/// Transfer { c11, c12, c21, c22 } to result
 			/// 
+			int offsetR = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (resultRowCount <= i)
 					break;
 
-				int offsetR = i * resultColumnCount;
+				//int offsetR = i * resultColumnCount;
 				int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
@@ -268,14 +288,17 @@ namespace MainProgram
 
 					result[offsetR + j] = c11.RealMatrix[offsetC + j];
 				}
+
+				offsetR += resultColumnCount;
 			}
 
+			offsetR = childLength;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i >= resultRowCount)
 					break;
 
-				int offsetR = (i * resultColumnCount) + childLength;
+				//int offsetR = (i * resultColumnCount) + childLength;
 				int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
@@ -285,14 +308,16 @@ namespace MainProgram
 
 					result[offsetR + j] = c12.RealMatrix[offsetC + j];
 				}
+				offsetR += childLength;
 			}
 
+			offsetR = childLength * resultColumnCount;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i + childLength >= resultRowCount)
 					break;
 
-				int offsetR = (i + childLength) * resultColumnCount;
+				//int offsetR = (i + childLength) * resultColumnCount;
 				int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
@@ -302,14 +327,16 @@ namespace MainProgram
 
 					result[offsetR + j] = c21.RealMatrix[offsetC + j];
 				}
+				offsetR += resultColumnCount;
 			}
 
+			offsetR = childLength * resultColumnCount + childLength;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i + childLength >= resultRowCount)
 					break;
 
-				int offsetR = ((i + childLength) * resultColumnCount) + childLength;
+				//int offsetR = ((i + childLength) * resultColumnCount) + childLength;
 				int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
@@ -319,6 +346,7 @@ namespace MainProgram
 
 					result[offsetR + j] = c22.RealMatrix[offsetC + j];
 				}
+				offsetR += resultColumnCount;
 			}
 
 
@@ -339,6 +367,9 @@ namespace MainProgram
 			var childLength		= leftSide.Length / 2;
 			var childBlockSize	= childLength * childLength;
 
+			///
+			/// Break A, B, and C down into 4 components (each).
+			/// 
 			var a11		= new SubMatrix() { RealMatrix = leftSide.RealMatrix,	Length = childLength, RealRowWidth = leftSide.RealRowWidth,		StartX = leftSide.StartX,					StartY = leftSide.StartY };
 			var a12		= new SubMatrix() { RealMatrix = leftSide.RealMatrix,	Length = childLength, RealRowWidth = leftSide.RealRowWidth,		StartX = leftSide.StartX + childLength,		StartY = leftSide.StartY };
 			var a21		= new SubMatrix() { RealMatrix = leftSide.RealMatrix,	Length = childLength, RealRowWidth = leftSide.RealRowWidth,		StartX = leftSide.StartX,					StartY = leftSide.StartY + childLength };
@@ -354,6 +385,9 @@ namespace MainProgram
 			var c21		= new SubMatrix() { RealMatrix = result.RealMatrix,		Length = childLength, RealRowWidth = result.RealRowWidth,		StartX = result.StartX,						StartY = result.StartY + childLength };
 			var c22		= new SubMatrix() { RealMatrix = result.RealMatrix,		Length = childLength, RealRowWidth = result.RealRowWidth,		StartX = result.StartX + childLength,		StartY = result.StartY + childLength };
 
+			///
+			/// Create new matrices for our intermidiate values.
+			/// 
 			var tempL	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 			var tempR	= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 
@@ -408,6 +442,11 @@ namespace MainProgram
 			SubMatrix.Subtract(m1, m2, tempL);
 			SubMatrix.Add(m3, m6, tempR);
 			SubMatrix.Add(tempL, tempR, c22);
+
+			///
+			/// We don't need to copy { c11, c12, c21, c22 } back over to the result because they are already in 
+			/// the result.
+			/// 
 		}
 
 		private static void MatrixMult_TransposeThenDotProducts(float[] matrixA, float[] matrixB, float[] result, float[] b_T, Tuple<int, int> shapeA, Tuple<int, int> shapeB)
@@ -459,7 +498,6 @@ namespace MainProgram
 			}
 		}
 
-
 		private static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length, int sourceWidth, int sourceHeight)
 		{
 			for (int i = 0; i < length; i++)
@@ -469,93 +507,19 @@ namespace MainProgram
 				if (sourceHeight <= sourceRow)
 					break;
 
+				int sourceOffset = sourceRow * sourceWidth;
+				int resultOffset = i * length;
+
 				for (int j = 0; j < length; j++)
 				{
 					var sourceColumn = j + startColumn;
 					if (sourceWidth <= sourceColumn)
 						break;
 
-					result[i * length + j] = source[sourceRow * sourceWidth + sourceColumn];
+					result[resultOffset + j] = source[sourceOffset + sourceColumn];
 				}
 			}
 		}
-
-
-		//private static void Add(float[] leftSide, float[] rightSide, float[] result, int blockSize)
-		//{
-		//	int packedCount = Vector<float>.Count;
-
-		//	for (int i = 0; i < blockSize; i += packedCount)
-		//	{
-		//		var l = new Vector<float>(leftSide, i);
-		//		var r = new Vector<float>(rightSide, i);
-
-		//		(l + r).CopyTo(result, i);
-		//	}
-		//}
-
-		//private static void Add(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
-		//{
-		//	int packedCount = Vector<float>.Count;
-		//	int resultIndex = 0;
-
-		//	int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
-		//	int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
-
-		//	for (int i = 0; i < length; i++)
-		//	{
-		//		for (int j = 0; j < length; j += packedCount)
-		//		{
-		//			var l = new Vector<float>(leftSide, offsetL + j);
-		//			var r = new Vector<float>(rightSide, offsetR + j);
-
-		//			(l + r).CopyTo(result, resultIndex);
-
-		//			resultIndex += packedCount;
-		//		}
-
-		//		offsetL += rowSize;
-		//		offsetR += rowSize;
-		//	}
-		//}
-
-		//private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int blockSize)
-		//{
-		//	int packedCount     = Vector<float>.Count;
-
-		//	for (int i = 0; i < blockSize; i += packedCount)
-		//	{
-		//		var l = new Vector<float>(leftSide, i);
-		//		var r = new Vector<float>(rightSide, i);
-
-		//		(l - r).CopyTo(result, i);
-		//	}
-		//}
-
-		//private static void Subtract(float[] leftSide, float[] rightSide, float[] result, int length, int rowSize, Tuple<int, int> leftStart, Tuple<int, int> rightStart)
-		//{
-		//	int packedCount = Vector<float>.Count;
-		//	int resultIndex = 0;
-
-		//	int offsetL = leftStart.Item1 * rowSize + leftStart.Item2;
-		//	int offsetR = rightStart.Item1 * rowSize + rightStart.Item2;
-
-		//	for (int i = 0; i < length; i++)
-		//	{
-		//		for (int j = 0; j < length; j += packedCount)
-		//		{
-		//			var l = new Vector<float>(leftSide, offsetL + j);
-		//			var r = new Vector<float>(rightSide, offsetR + j);
-
-		//			(l - r).CopyTo(result, resultIndex);
-
-		//			resultIndex += packedCount;
-		//		}
-
-		//		offsetL += rowSize;
-		//		offsetR += rowSize;
-		//	}
-		//}
 
 	}
 }
