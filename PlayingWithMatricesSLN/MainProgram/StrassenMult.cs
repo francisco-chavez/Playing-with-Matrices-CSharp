@@ -281,15 +281,15 @@ namespace MainProgram
 			///
 			/// Transfer { c11, c12, c21, c22 } to result
 			/// 
-			//int offsetR = 0;
-			//int offsetC = 0;
+			int offsetR = 0;
+			int offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (resultRowCount <= i)
 					break;
 
-				int offsetR = i * resultColumnCount;
-				int offsetC = i * childLength;
+				//int offsetR = i * resultColumnCount;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -299,19 +299,19 @@ namespace MainProgram
 					result[offsetR + j] = c11.RealMatrix[offsetC + j];
 				}
 
-				//offsetR += resultColumnCount;
-				//offsetC += childLength;
+				offsetR += resultColumnCount;
+				offsetC += childLength;
 			}
 
-			//offsetR = childLength;
-			//offsetC = 0;
+			offsetR = childLength;
+			offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i >= resultRowCount)
 					break;
 
-				int offsetR = (i * resultColumnCount) + childLength;
-				int offsetC = i * childLength;
+				//int offsetR = (i * resultColumnCount) + childLength;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -320,19 +320,19 @@ namespace MainProgram
 
 					result[offsetR + j] = c12.RealMatrix[offsetC + j];
 				}
-				//offsetR += childLength;
-				//offsetC += childLength;
+				offsetR += resultColumnCount;
+				offsetC += childLength;
 			}
 
-			//offsetR = childLength * resultColumnCount;
-			//offsetC = 0;
+			offsetR = childLength * resultColumnCount;
+			offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i + childLength >= resultRowCount)
 					break;
 
-				int offsetR = (i + childLength) * resultColumnCount;
-				int offsetC = i * childLength;
+				//int offsetR = (i + childLength) * resultColumnCount;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -341,19 +341,19 @@ namespace MainProgram
 
 					result[offsetR + j] = c21.RealMatrix[offsetC + j];
 				}
-				//offsetR += resultColumnCount;
-				//offsetC += childLength;
+				offsetR += resultColumnCount;
+				offsetC += childLength;
 			}
 
-			//offsetR = childLength * resultColumnCount + childLength;
-			//offsetC = 0;
+			offsetR = childLength * resultColumnCount + childLength;
+			offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i + childLength >= resultRowCount)
 					break;
 
-				int offsetR = ((i + childLength) * resultColumnCount) + childLength;
-				int offsetC = i * childLength;
+				//int offsetR = ((i + childLength) * resultColumnCount) + childLength;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -362,8 +362,8 @@ namespace MainProgram
 
 					result[offsetR + j] = c22.RealMatrix[offsetC + j];
 				}
-				//offsetR += resultColumnCount;
-				//offsetC += childLength;
+				offsetR += resultColumnCount;
+				offsetC += childLength;
 			}
 
 
