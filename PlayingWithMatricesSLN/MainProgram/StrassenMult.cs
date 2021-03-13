@@ -189,21 +189,102 @@ namespace MainProgram
 			int childBlockSize	= childLength * childLength;
 			int childN			= n - 1;
 
-			var a11		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
-			var a12		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
-			var a21		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
-			var a22		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 
-			var b11		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
-			var b12		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
-			var b21		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
-			var b22		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			SubMatrix a11;
+			if (shapeA.Item1 < childLength || shapeA.Item2 < childLength)
+			{
+				a11 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: a11.RealMatrix, source: matrixA, startRow: 0, startColumn: 0, length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+			}
+			else
+			{
+				a11 = new SubMatrix() { RealMatrix = matrixA, StartX = 0, StartY = 0, Length = childLength, RealRowWidth = shapeA.Item2 };
+			}
+
+			SubMatrix a12;
+			if (shapeA.Item1 < childLength || shapeA.Item2 < t)
+			{
+				a12 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: a12.RealMatrix, source: matrixA, startRow: 0, startColumn: childLength, length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+			}
+			else
+			{
+				a12 = new SubMatrix() { RealMatrix = matrixA, StartX = childLength, StartY = 0, Length = childLength, RealRowWidth = shapeA.Item2 };
+			}
+
+			SubMatrix a21;
+			if (shapeA.Item1 < t || shapeA.Item2 < childLength)
+			{
+				a21 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: a21.RealMatrix, source: matrixA, startRow: childLength, startColumn: 0, length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+			}
+			else
+			{
+				a21 = new SubMatrix() { RealMatrix = matrixA, StartX = 0, StartY = childLength, Length = childLength, RealRowWidth = shapeA.Item2 };
+			}
+
+			SubMatrix a22;
+			if (shapeA.Item1 < t || shapeA.Item2 < t)
+			{
+				a22 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: a22.RealMatrix, source: matrixA, startRow: childLength, startColumn: childLength, length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
+			}
+			else
+			{
+				a22 = new SubMatrix() { RealMatrix = matrixA, StartX = childLength, StartY = childLength, Length = childLength, RealRowWidth = shapeA.Item2 };
+			}
+
+
+			SubMatrix b11;
+			if (shapeB.Item1 < childLength || shapeB.Item2 < childLength)
+			{
+				b11 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: b11.RealMatrix, source: matrixB, startRow: 0, startColumn: 0, length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+			}
+			else
+			{
+				b11 = new SubMatrix() { RealMatrix = matrixB, StartX = 0, StartY = 0, Length = childLength, RealRowWidth = shapeB.Item2 };
+			}
+
+			SubMatrix b12;
+			if (shapeB.Item1 < childLength || shapeB.Item2 < t)
+			{
+				b12 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: b12.RealMatrix, source: matrixB, startRow: 0, startColumn: childLength, length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+			}
+			else
+			{
+				b12 = new SubMatrix() { RealMatrix = matrixB, StartX = childLength, StartY = 0, Length = childLength, RealRowWidth = shapeB.Item2 };
+			}
+
+			SubMatrix b21;
+			if (shapeB.Item1 < t || shapeB.Item2 < childLength)
+			{
+				b21 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: b21.RealMatrix, source: matrixB, startRow: childLength, startColumn: 0, length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+			}
+			else
+			{
+				b21 = new SubMatrix() { RealMatrix = matrixB, StartX = 0, StartY = childLength, Length = childLength, RealRowWidth = shapeB.Item2 };
+			}
+
+			SubMatrix b22;
+			if (shapeB.Item1 < t || shapeB.Item2 < t)
+			{
+				b22 = new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+				FillInBlock(result: b22.RealMatrix, source: matrixB, startRow: childLength, startColumn: childLength, length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
+			}
+			else
+			{
+				b22 = new SubMatrix() { RealMatrix = matrixB, StartX = childLength, StartY = childLength, Length = childLength, RealRowWidth = shapeB.Item2 };
+			}
+
 
 			// By the time we are using 'C's sub-matrices, we no longer need 'A's sub-matrices, so we might as well re-use them.
-			var c11		= a11;
-			var c12		= a12;
-			var c21		= a21;
-			var c22		= a22;
+			var c11		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var c12		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var c21		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
+			var c22		= new SubMatrix() { RealMatrix = MonoMatrixOperations.CreateZeroMatrix(childBlockSize), StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 
 			int limitLength = SwitchLength - 1;
 			var b_T		= new SubMatrix() { RealMatrix = new float[limitLength * limitLength], StartX = 0, StartY = 0, Length = limitLength, RealRowWidth = limitLength };
@@ -219,19 +300,6 @@ namespace MainProgram
 			var m6		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 			var m7		= new SubMatrix() { RealMatrix = new float[childBlockSize], StartX = 0, StartY = 0, Length = childLength, RealRowWidth = childLength };
 
-
-			///
-			/// Break matrices { A, B } into matrices { A11, A12, A21, A22, B11, B12, B21, B22 }
-			///
-			FillInBlock(result: a11.RealMatrix, source: matrixA, startRow: 0,			startColumn: 0,				length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
-			FillInBlock(result: a12.RealMatrix, source: matrixA, startRow: 0,			startColumn: childLength,	length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
-			FillInBlock(result: a21.RealMatrix, source: matrixA, startRow: childLength, startColumn: 0,				length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
-			FillInBlock(result: a22.RealMatrix, source: matrixA, startRow: childLength, startColumn: childLength,	length: childLength, sourceHeight: shapeA.Item1, sourceWidth: shapeA.Item2);
-
-			FillInBlock(result: b11.RealMatrix, source: matrixB, startRow: 0,			startColumn: 0,				length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
-			FillInBlock(result: b12.RealMatrix, source: matrixB, startRow: 0,			startColumn: childLength,	length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
-			FillInBlock(result: b21.RealMatrix, source: matrixB, startRow: childLength, startColumn: 0,				length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
-			FillInBlock(result: b22.RealMatrix, source: matrixB, startRow: childLength, startColumn: childLength,	length: childLength, sourceHeight: shapeB.Item1, sourceWidth: shapeB.Item2);
 
 
 			///
