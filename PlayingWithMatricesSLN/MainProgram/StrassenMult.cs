@@ -77,18 +77,21 @@ namespace MainProgram
 				///
 				/// Transpose the rightSide SubMatrix onto rightSide_T.
 				/// 
+				int sourceOffset = rightSide.StartY * rightSide.RealRowWidth + rightSide.StartX;
 				for (int i = 0; i < leftSide.Length; i++)
 				{
-					int sourceRow		= rightSide.StartY + i;
-					int sourceOffset	= sourceRow * rightSide.RealRowWidth + rightSide.StartX;
+					//int sourceRow		= rightSide.StartY + i;
+					//int sourceOffset	= sourceRow * rightSide.RealRowWidth + rightSide.StartX;
 
-					//int offsetT = 0;
+					int offsetT = 0;
 					for (int j = 0; j < leftSide.Length; j++)
 					{
-						rightSide_T.RealMatrix[j * leftSide.Length + i] = rightSide.RealMatrix[sourceOffset + j];
-						//rightSide_T.RealMatrix[offsetT + i] = rightSide.RealMatrix[sourceOffset + j];
-						//offsetT += leftSide.Length;
+						//rightSide_T.RealMatrix[j * leftSide.Length + i] = rightSide.RealMatrix[sourceOffset + j];
+						rightSide_T.RealMatrix[offsetT + i] = rightSide.RealMatrix[sourceOffset + j];
+						offsetT += leftSide.Length;
 					}
+					//sourceRow++;
+					sourceOffset += rightSide.RealRowWidth;
 				}
 
 				var elementCount		= Vector<float>.Count;
