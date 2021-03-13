@@ -530,15 +530,16 @@ namespace MainProgram
 
 				//int sourceOffset = sourceRow * sourceWidth;
 				//int resultOffset = i * length;
-
+				var sourceColumn = startColumn;
 				for (int j = 0; j < length; j++)
 				{
-					var sourceColumn = j + startColumn;
+					//var sourceColumn = j + startColumn;
 					if (sourceWidth <= sourceColumn)
 						break;
 
 					//result[i * length + j] = source[sourceRow * sourceWidth + sourceColumn];
 					result[resultOffset + j] = source[sourceOffset + sourceColumn];
+					sourceColumn++;
 				}
 
 				resultOffset += length;
