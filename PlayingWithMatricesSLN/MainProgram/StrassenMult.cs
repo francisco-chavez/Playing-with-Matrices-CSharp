@@ -94,11 +94,14 @@ namespace MainProgram
 					sourceOffset += rightSide.RealRowWidth;
 				}
 
-				var elementCount		= Vector<float>.Count;
-				var simdCount			= leftSide.Length / elementCount;
 
+				///
+				/// Matrix Multiplication
+				/// 
+				var elementCount		= Vector<float>.Count;
 				var resultIndexOffset	= result.StartY * result.RealRowWidth + result.StartX;
 				var leftIndexOffset		= leftSide.StartY * leftSide.RealRowWidth + leftSide.StartX;
+
 				for (int rY = 0; rY < leftSide.Length; rY++)
 				{
 					//var resultIndexOffset = result.StartY + rY;
@@ -109,25 +112,29 @@ namespace MainProgram
 					//leftIndexOffset *= leftSide.RealRowWidth;
 					//leftIndexOffset += leftSide.StartX;
 
-					int bRowOffset = 0;
-
+					int bRowOffset		= 0;
+					int resultIndex		= resultIndexOffset;
 					for (int rX = 0; rX < leftSide.Length; rX++)
 					{
-						result.RealMatrix[resultIndexOffset + rX] = 0.0f;
+						//int resultIndex = resultIndexOffset + rX;
+						//result.RealMatrix[resultIndexOffset + rX] = 0.0f;
+						result.RealMatrix[resultIndex] = 0.0f;
 
 						for (int rS = 0; rS < leftSide.Length; rS += elementCount)
 						{
 							var vectorA = new Vector<float>(leftSide.RealMatrix, leftIndexOffset + rS);
 							var vectorB = new Vector<float>(rightSide_T.RealMatrix, bRowOffset + rS);
 
-							result.RealMatrix[resultIndexOffset + rX] += Vector.Dot(vectorA, vectorB);
+							//result.RealMatrix[resultIndexOffset + rX] += Vector.Dot(vectorA, vectorB);
+							result.RealMatrix[resultIndex] += Vector.Dot(vectorA, vectorB);
 						}
 
 						bRowOffset += leftSide.Length;
+						resultIndex++;
 					}
 
-					resultIndexOffset += result.RealRowWidth;
-					leftIndexOffset += leftSide.RealRowWidth;
+					resultIndexOffset	+= result.RealRowWidth;
+					leftIndexOffset		+= leftSide.RealRowWidth;
 				}
 			}
 
