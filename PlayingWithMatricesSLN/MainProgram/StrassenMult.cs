@@ -87,13 +87,12 @@ namespace MainProgram
 					{
 						//rightSide_T.RealMatrix[j * leftSide.Length + i] = rightSide.RealMatrix[sourceOffset + j];
 						rightSide_T.RealMatrix[offsetT + i] = rightSide.RealMatrix[sourceOffset + j];
-
+						offsetT += leftSide.Length;
 					}
-					offsetT += leftSide.Length;
 				}
 
-				var elementCount	= Vector<float>.Count;
-				var simdCount		= leftSide.Length / elementCount;
+				var elementCount		= Vector<float>.Count;
+				var simdCount			= leftSide.Length / elementCount;
 
 				var resultIndexOffset	= result.StartY * result.RealRowWidth + result.StartX;
 				var leftIndexOffset		= leftSide.StartY * leftSide.RealRowWidth + leftSide.StartX;
@@ -135,7 +134,7 @@ namespace MainProgram
 		/// <summary>
 		/// This needs to be equal to "2^n + 1" and "Vector&lt;float&gt;.Count &lt;= 2^n".
 		/// </summary>
-		private static int SwitchLength = 65;
+		private static int SwitchLength = 129;
 
 		public static float[] MatrixMult(float[] matrixA, float[] matrixB, Tuple<int, int> shapeA, Tuple<int, int> shapeB)
 		{
@@ -273,13 +272,14 @@ namespace MainProgram
 			/// Transfer { c11, c12, c21, c22 } to result
 			/// 
 			int offsetR = 0;
+			int offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (resultRowCount <= i)
 					break;
 
 				//int offsetR = i * resultColumnCount;
-				int offsetC = i * childLength;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -290,16 +290,18 @@ namespace MainProgram
 				}
 
 				offsetR += resultColumnCount;
+				offsetC += childLength;
 			}
 
 			offsetR = childLength;
+			offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i >= resultRowCount)
 					break;
 
 				//int offsetR = (i * resultColumnCount) + childLength;
-				int offsetC = i * childLength;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -309,16 +311,18 @@ namespace MainProgram
 					result[offsetR + j] = c12.RealMatrix[offsetC + j];
 				}
 				offsetR += childLength;
+				offsetC += childLength;
 			}
 
 			offsetR = childLength * resultColumnCount;
+			offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i + childLength >= resultRowCount)
 					break;
 
 				//int offsetR = (i + childLength) * resultColumnCount;
-				int offsetC = i * childLength;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -328,16 +332,18 @@ namespace MainProgram
 					result[offsetR + j] = c21.RealMatrix[offsetC + j];
 				}
 				offsetR += resultColumnCount;
+				offsetC += childLength;
 			}
 
 			offsetR = childLength * resultColumnCount + childLength;
+			offsetC = 0;
 			for (int i = 0; i < childLength; i++)
 			{
 				if (i + childLength >= resultRowCount)
 					break;
 
 				//int offsetR = ((i + childLength) * resultColumnCount) + childLength;
-				int offsetC = i * childLength;
+				//int offsetC = i * childLength;
 
 				for (int j = 0; j < childLength; j++)
 				{
@@ -347,6 +353,7 @@ namespace MainProgram
 					result[offsetR + j] = c22.RealMatrix[offsetC + j];
 				}
 				offsetR += resultColumnCount;
+				offsetC += childLength;
 			}
 
 
@@ -500,15 +507,19 @@ namespace MainProgram
 
 		private static void FillInBlock(float[] result, float[] source, int startColumn, int startRow, int length, int sourceWidth, int sourceHeight)
 		{
+			int resultOffset	= 0;
+			int sourceRow		= startRow;
+			int sourceOffset	= sourceRow * sourceWidth;
+
 			for (int i = 0; i < length; i++)
 			{
-				var sourceRow = i + startRow;
+				//var sourceRow = i + startRow;
 
 				if (sourceHeight <= sourceRow)
 					break;
 
-				int sourceOffset = sourceRow * sourceWidth;
-				int resultOffset = i * length;
+				//int sourceOffset = sourceRow * sourceWidth;
+				//int resultOffset = i * length;
 
 				for (int j = 0; j < length; j++)
 				{
@@ -516,8 +527,13 @@ namespace MainProgram
 					if (sourceWidth <= sourceColumn)
 						break;
 
+					//result[i * length + j] = source[sourceRow * sourceWidth + sourceColumn];
 					result[resultOffset + j] = source[sourceOffset + sourceColumn];
 				}
+
+				resultOffset += length;
+				sourceRow++;
+				sourceOffset += sourceWidth;
 			}
 		}
 
